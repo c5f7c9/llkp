@@ -1,0 +1,21 @@
+{
+  "name": "llkp",
+  "description": "LL(k) Parsers: ABNF, EBNF, PEG, etc.",
+  "homepage": "https://github.com/c5f7c9/llkp",
+  "keywords": [
+    "LL",
+    "LL(k)",
+    "parser"
+  ],
+  "version": "0.0.1",
+  "bin": {
+    "core": "./core.js"
+  },  
+  "devDependencies": {
+    "mocha": "~1.14.0"
+  },    
+  "repository": { "type": "git", "url": "git://github.com/c5f7c9/llkp.git" },
+  "bugs": { "url": "https://github.com/c5f7c9/llkp/issues" },
+  "licenses": [ { "type": "MIT", "url": "http://opensource.org/licenses/MIT" } ],
+  "scripts": { "test": "mocha -u tdd" }
+}
