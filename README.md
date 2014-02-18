@@ -19,29 +19,31 @@ TODO: same with EBNF and PEG
 
 ### The idea of the library.
 
-The core of this library is a set of simple parsing functions that read input and return results of parsing: numbers, arrays, dictionaries and so on. Two such functions read the input directly:
+The core of this library is a set of simple parsing functions that can be combines into more complicated parsing functions. A parsing function (a pattern) reads an input and returns whatever it has parsed as well as the position where it ended reading input. Here is the list of such core parsing functions:
 
-* The **txt** function that just compares the input with a fixed given string and returns that string if it matches the input.
-* The **rgx** function that does the same, but compares the input with a given regular expression. For instance, **rgx(/[a-zA-Z$][a-zA-Z$0-9]/)** is able to parse a valid name of a JS varaible.
+* txt - compares the input with a fixed given string and returns that string if it matches the input
+* rgx - same as txt, but compares the input with a regular expression of almost any complexity:
+* opt - makes a pattern optional: if it doesn't match input, returns null
+* any - combines a few patterns together and makes another pattern that reads the input, applies the patterns one by one and returns whatever the first matched pattern returned
+* seq - combines a few patterns together and makes another pattern that reads the input, applies the patterns one by one and returns the array of results returned by the patterns
+* rep - takes a pattern and constructs another one, that tries to apply the given pattern to the input several times and return the array of results
+* exc - makes a pattern that matches the first pattern but not the second one
 
-Then a few parsing function that combine other parsing functions into more complex patterns allow to build parsers of almost any complexity:
-
-* **opt** - makes a pattern optional
-* **any** - makes an alternation pattern that matches any of the given patterns
-* **seq** - makes a sequence pattern that applies given patterns one by one to the input
-* **rep** - makes a repetition of a pattern
-* **exc** - makes a pattern that matches the first but not the second pattern
-
-In addition to that every pattern can be amended by a custom transformation that will modify results of parsing the input with that pattern. This is achieved by the **then** method that creates another pattern based on existing one and a given transformation function. So if there is a pattern **attrs** that reads a sequence of key-value pairs and returns them as an array of arrays, it's possible to use **attrs.then** method to create another pattern **attrs2** that will parse the same key-value sequences but will return them as a dictionary.
-
-It's quite obvious that with these parsing functions it's possible to write a LL(k) parser of a grammar written in ABNF, EBNF or PEG and then reconstitute from that textual representation a parsing function that will parse whatever the grammar defines, so it'll be possible to write in JS something like this:
+In addition to that every pattern has the .then method that builts another pattern on top of the given one by transforming its result with a given function. In the example below this trick is used to construct a parsing function that reads a comma separated name value pairs and returns them as a dictionary:
 
 ````js
-var pattern = new EBNF('[scheme ":"] ["//" host [":" port]] ["/" path] ["?" query]');
-var uri = pattern.exec('https://github.com:80/.../?qw=123');
+var pair = seq(rgx(/\w+/), txt('='), rgx(/\w+/));
+var list = rep(pair, txt(';')).then(function (r) {
+    var i, m = {};
+    for (i = 0; i < r.length; i++)
+        m[r[i][0]] = r[i][2];
+    return m;
+});
 
-if (uri.scheme == 'https')
-    ...
+var text = 'charset=utf8;type=text;subtype=html';
+var dict = list.exec(text);
+
+assert.deepEqual(dict, { charset: 'utf8', type: 'text', subtype: 'html' });
 ````
 
 ### The structure of the library.
