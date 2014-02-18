@@ -82,8 +82,7 @@ The Pattern class implements a generic parsing function. It has two methods:
 Any transformation of results given by a pattern can be done via its .then method. Some transformations are very common, so they are a part of this library as core.then.js:
 
 ````js
-var core = require('llkp/core.then');
-var attr = core.seq(core.rgx(/\w+/), core.txt('='), core.rgx(/\w+/)).map({ key:0, val:2 })
+var attr = seq(rgx(/\w+/), txt('='), rgx(/\w+/)).map({ key:0, val:2 });
     
 attrs.exec('charset=utf8') == { key: 'charset', val: 'utf8' };
 ````
