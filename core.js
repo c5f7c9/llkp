@@ -1,78 +1,69 @@
 // LL(k) core parsing functions and combinators.
+// Exports LLKP.Core namespace.
 
 (function () {
     'use strict';
 
     function Pattern(name, exec) {
-        this.name = name;
-        this.exec = exec;
-    }
+        this.toString = function () {
+            return name;
+        };
 
-    Pattern.prototype = {
-        toString: function () {
-            return this.name;
-        },
+        this.exec = function (str, pos) {
+            var r = exec(str, pos || 0);
+            return pos >= 0 ? r : !r ? null : r.end != str.length ? null : r.res;
+        };
 
-        then: function (transform) {
-            var exec = this.exec;
-            return new Pattern(this.name, function (str) {
-                var r = exec(str);
-                return r && fps(transform(r[0], str), r.end);
+        this.then = function (transform) {
+            return new Pattern(name, function (str, pos) {
+                var r = exec(str, pos);
+                return r && { res: transform(r.res, str.slice(pos, r.end)), end: r.end };
             });
-        },
-
-        select: function (index) {
-            return this.then(function (r) {
-                return r[index];
-            });
-        }
-    };
-
-    // final parsing state
-    function fps(res, end) {
-        var out = [res];
-        out.end = end;
-        return out;
+        };
     }
 
     // parses a known text
     function txt(text) {
-        return new Pattern('"' + text.replace(/"/gm, '\\"') + '"', function (str) {
-            if (str.substr(0, text.length) == text)
-                return fps(text, text.length);
+        var name = '"' + text.replace(/"/gm, '\\"') + '"';
+        return new Pattern(name, function (str, pos) {
+            if (str.substr(pos, text.length) == text)
+                return { res: text, end: pos + text.length };
         });
     }
 
     // parses a regular expression
     function rgx(regexp) {
-        return new Pattern(regexp + '', function (str) {
-            var r = regexp.exec(str);
-            if (r && !r.index) // regex must match at the beginning, so index must be 0
-                return fps(r[0], r[0].length);
+        return new Pattern(regexp + '', function (str, pos) {
+            var m = regexp.exec(str.slice(pos));
+            if (m && m.index == 0) // regex must match at the beginning, so index must be 0
+                return { res: m[0], end: pos + m[0].length };
         });
     }
 
     // parses an optional pattern
     function opt(pattern, defval) {
-        return new Pattern(pattern + '?', function (str) {
-            return pattern.exec(str) || fps(defval, 0);
+        return new Pattern(pattern + '?', function (str, pos) {
+            return pattern.exec(str, pos) || { res: defval, end: pos };
         });
     }
 
     // parses a pattern if it doesn't match another pattern
     function exc(pattern, except) {
-        return new Pattern(pattern + ' ~ ' + except, function (str) {
-            return !except.exec(str) && pattern.exec(str);
+        var name = pattern + ' ~ ' + except;
+        return new Pattern(name, function (str, pos) {
+            return !except.exec(str, pos) && pattern.exec(str, pos);
         });
     }
 
     // parses any of the given patterns
     function any(/* patterns... */) {
         var patterns = [].slice.call(arguments, 0);
-        return new Pattern('(' + patterns.join(' | ') + ')', function (str) {
+        var name = '(' + patterns.join(' | ') + ')';
+
+        return new Pattern(name, function (str, pos) {
             var r, i;
             for (i = 0; i < patterns.length && !r; i++)
-                r = patterns[i].exec(str);
+                r = patterns[i].exec(str, pos);
             return r;
         });
     }
@@ -80,33 +71,40 @@
     // parses a sequence of patterns
     function seq(/* patterns... */) {
         var patterns = [].slice.call(arguments, 0);
-        return new Pattern('(' + patterns.join(' ') + ')', function (str) {
-            var i, r, n = 0, a = [];
+        var name = '(' + patterns.join(' ') + ')';
+
+        return new Pattern(name, function (str, pos) {
+            var i, r, end = pos, res = [];
 
             for (i = 0; i < patterns.length; i++) {
-                r = patterns[i].exec(str.slice(n));
+                r = patterns[i].exec(str, end);
                 if (!r) return;
-                a.push(r[0]);
-                n += r.end;
+                res.push(r.res);
+                end = r.end;
             }
 
-            return fps(a, n);
+            return { res: res, end: end };
         });
     }
 
     // parses a (separated) repetition of a pattern
-    function rep(pattern, separator) {
-        var separated = separator ? seq(separator, pattern).select(1) : pattern;
-        return new Pattern(pattern + '*' + (separator ? ':' + separator : ''), function (str) {
-            var a = [], n = 0, r = pattern.exec(str);
+    function rep(pattern, separator, min, max) {
+        var separated = !separator ? pattern :
+            seq(separator, pattern).then(function (r) { return r[1] });
 
-            while (r && r.end > 0) {
-                a.push(r[0]);
-                n += r.end;
-                r = separated.exec(str.slice(n));
+        if (!isFinite(min)) min = 1;
+        if (!isFinite(max)) max = Infinity;
+
+        return new Pattern(pattern + '*', function (str, pos) {
+            var res = [], end = pos, r = pattern.exec(str, end);
+
+            while (r && r.end > end && res.length < max) {
+                res.push(r.res);
+                end = r.end;
+                r = separated.exec(str, end);
             }
 
-            return a.length > 0 && fps(a, n);
+            return res.length >= min ? { res: res, end: end } : null;
         });
     }
 
@@ -122,10 +120,10 @@
             rep: rep
         };
 
-        if (typeof module != typeof void 0)
+        if (typeof module != typeof void 0) // for Node
             module.exports = exports;
 
-        if (typeof window != typeof void 0)
-            window.LLParserCore = exports;
+        if (typeof window != typeof void 0) // for browsers
+            window.LLKP = { Core: exports };
     })();
 })();

@@ -13,95 +13,111 @@ suite('Core', function () {
     'use strict';
 
     suite('txt', function () {
-        test('1.1', function () {
-            var p = txt('');
-            var r = p.exec('');
+        suite('empty', function () {
+            test(1, function () {
+                var p = txt('');
+                var r = p.exec('');
 
-            assert.equal(r[0], '');
-            assert.equal(r.end, 0);
+                assert.equal(r, '');
+            });
+
+            test(2, function () {
+                var p = txt('');
+                var r = p.exec('abc');
+
+                assert.equal(r, null);
+            });
         });
 
-        test('1.2', function () {
-            var p = txt('');
-            var r = p.exec('abc');
+        suite('regular', function () {
+            test(1, function () {
+                var p = txt('abc');
+                var r = p.exec('abc');
 
-            assert.equal(r[0], '');
-            assert.equal(r.end, 0);
+                assert.equal(r, 'abc');
+            });
+
+            test(2, function () {
+                var p = txt('abc');
+                var r = p.exec('abcdef');
+
+                assert.equal(r, null);
+            });
+
+            test(3, function () {
+                var p = txt('abc');
+                var r = p.exec('abC');
+
+                assert.equal(r, null);
+            });
+
+            test(4, function () {
+                var p = txt('abc');
+                var r = p.exec('ab');
+
+                assert.equal(r, null);
+            });
+
+            test(5, function () {
+                var p = txt('abc');
+                var r = p.exec('');
+
+                assert.equal(r, null);
+            });
         });
 
-        test('2.1', function () {
-            var p = txt('abc');
-            var r = p.exec('abc');
+        suite('toString', function () {
+            test(1, function () {
+                var p = txt('');
+                assert.equal(p, '""');
+            });
 
-            assert.equal(r[0], 'abc');
-            assert.equal(r.end, 3);
-        });
+            test(2, function () {
+                var p = txt('abc');
+                assert.equal(p, '"abc"');
+            });
 
-        test('2.2', function () {
-            var p = txt('abc');
-            var r = p.exec('abcdef');
-
-            assert.equal(r[0], 'abc');
-            assert.equal(r.end, 3);
-        });
-
-        test('2.3', function () {
-            var p = txt('abc');
-            var r = p.exec('abC');
-
-            assert(!r);;
-        });
-
-        test('toString.1', function () {
-            assert.equal(txt('') + '', '""');
-        });
-
-        test('toString.2', function () {
-            assert.equal(txt('abc') + '', '"abc"');
-        });
-
-        test('toString.3', function () {
-            assert.equal(txt('"123"') + '', '"\\"123\\""');
+            test(3, function () {
+                var p = txt('"123"');
+                assert.equal(p, '"\\"123\\""');
+            });
         });
     });
 
     suite('rgx', function () {
-        test('1.1', function () {
+        test(1, function () {
             var p = rgx(/abc/);
             var r = p.exec('abc');
 
-            assert.equal(r[0], 'abc');
-            assert.equal(r.end, 3);
+            assert.equal(r, 'abc');
         });
 
-        test('1.2', function () {
+        test(2, function () {
             var p = rgx(/abc/);
             var r = p.exec('abcdef');
 
-            assert.equal(r[0], 'abc');
-            assert.equal(r.end, 3);
+            assert.equal(r, null);
         });
 
-        test('2.1', function () {
+        test(3, function () {
             var p = rgx(/abc/);
             var r = p.exec('abC');
 
-            assert(!r);;
+            assert.equal(r, null);
         });
 
-        test('2.2', function () {
+        test(4, function () {
             var p = rgx(/abc/);
             var r = p.exec('123abc');
 
-            assert(!r);;
+            assert.equal(r, null);
         });
 
-        test('1.4', function () {
+        test(5, function () {
             var p = rgx(/[\x00-\xff]+/m);
             var r = p.exec('abc\r\ndef');
 
-            assert.equal(r[0], 'abc\r\ndef');
-            assert.equal(r.end, 8);
+            assert.equal(r, 'abc\r\ndef');
         });
 
         test('toString', function () {
@@ -110,389 +126,361 @@ suite('Core', function () {
     });
 
     suite('opt', function () {
-        test('1.1', function () {
+        test(1, function () {
             var p = opt(txt('abc'));
             var r = p.exec('abc');
 
-            assert.equal(r[0], 'abc');
-            assert.equal(r.end, 3);
+            assert.equal(r, 'abc');
         });
 
-        test('1.2', function () {
+        test(2, function () {
             var p = opt(txt('abc'));
             var r = p.exec('abcdef');
 
-            assert.equal(r[0], 'abc');
-            assert.equal(r.end, 3);
+            assert.equal(r, null);
         });
 
-        test('1.3', function () {
+        test(3, function () {
             var p = opt(txt(''));
             var r = p.exec('');
 
-            assert.equal(r[0], '');
-            assert.equal(r.end, 0);
+            assert.equal(r, '');
         });
 
-        test('1.4', function () {
+        test(4, function () {
             var p = opt(txt(''));
             var r = p.exec('abc');
 
-            assert.equal(r[0], '');
-            assert.equal(r.end, 0);
+            assert.equal(r, null);
         });
 
-        test('2.1', function () {
-            var p = opt(txt('abc'));
-            var r = p.exec('def');
-
-            assert.equal(r[0], void 0);
-            assert.equal(r.end, 0);
-        });
-
-        test('2.2', function () {
+        test(5, function () {
             var p = opt(txt('abc'));
             var r = p.exec('');
 
-            assert.equal(r[0], void 0);
-            assert.equal(r.end, 0);
+            assert.equal(r, void 0);
         });
 
-        test('2.3', function () {
-            var p = opt(txt('abc'), 456);
+        test(6, function () {
+            var p = opt(txt('abc'));
             var r = p.exec('def');
 
-            assert.equal(r[0], 456);
-            assert.equal(r.end, 0);
+            assert.equal(r, null);
         });
 
-        test('3.1', function () {
+        test(7, function () {
+            var p = opt(txt('abc'), 456);
+            var r = p.exec('');
+
+            assert.equal(r, 456);
+        });
+
+        test(8, function () {
+            var p = opt(txt(''), 456);
+            var r = p.exec('');
+
+            assert.equal(r, '');
+        });
+
+        test(9, function () {
             var p = opt(opt(txt('abc')));
             var r = p.exec('abc');
 
-            assert.equal(r[0], 'abc');
-            assert.equal(r.end, 3);
+            assert.equal(r, 'abc');
         });
 
         test('toString', function () {
-            assert.equal(opt(txt('abc')), '"abc"?');
+            var p = opt(txt('abc'));
+            assert.equal(p, '"abc"?');
         });
     });
 
     suite('exc', function () {
-        test('1.1', function () {
+        test(1, function () {
             var p = exc(txt('abc'), txt('abcdef'));
-            var r = p.exec('abcd');
-
-            assert.equal(r[0], 'abc');
-            assert.equal(r.end, 3);
-        });
-
-        suite('1.2', function () {
-            var p = exc(rgx(/\w{3}/), rgx(/\d{3}/));
-
-            test('a', function () {
-                assert.equal(p.exec('abc')[0], 'abc');
-            });
-
-            test('b', function () {
-                assert.equal(p.exec('a23')[0], 'a23');
-            });
-
-            test('c', function () {
-                assert(!p.exec('123'));
-            });
-        });
-
-        test('2.1', function () {
-            var p = exc(txt('abc'), txt('abcdef'));
-            var r = p.exec('abcdefg');
-
-            assert(!r);
-        });
-
-        test('2.2', function () {
-            var p = exc(txt('abc'), txt('abcdef'));
-            var r = p.exec('12345');
-
-            assert(!r);
-        });
-
-        test('2.3', function () {
-            var x = txt('abc');
-            var p = exc(x, x);
             var r = p.exec('abc');
 
-            assert(!r);
+            assert.equal(r, 'abc');
+        });
+
+        test(2, function () {
+            var p = exc(txt('abc'), txt('abcdef'));
+            var r = p.exec('abcdef');
+
+            assert.equal(r, null);
+        });
+
+        test(3, function () {
+            var p = exc(txt('abc'), txt('abc'));
+            var r = p.exec('abc');
+
+            assert.equal(r, null);
+        });
+
+        test(4, function () {
+            var p = exc(txt('abc'), txt('def'));
+            var r = p.exec('123');
+
+            assert.equal(r, null);
         });
 
         test('toString', function () {
-            var p = exc(rgx(/\w+/), txt('123'));
-            assert.equal(p + '', '/\\w+/ ~ "123"');
+            var p = exc(txt('abc'), txt('123'));
+            assert.equal(p, '"abc" ~ "123"');
         });
     });
 
     suite('any', function () {
-        suite('1', function () {
-            var p = any(txt('a'), txt('bb'), txt('ccc'));
+        var p;
 
-            test('1', function () {
-                var r = p.exec('a');
-
-                assert.equal(r[0], 'a');
-                assert.equal(r.end, 1);
-            });
-
-            test('2', function () {
-                var r = p.exec('bb');
-
-                assert.equal(r[0], 'bb');
-                assert.equal(r.end, 2);
-            });
-
-            test('3', function () {
-                var r = p.exec('ccc');
-
-                assert.equal(r[0], 'ccc');
-                assert.equal(r.end, 3);
-            });
+        setup(function () {
+            p = any(txt('a'), txt('bb'), txt('ccc'))
         });
 
-        test('2', function () {
-            var p = any(txt('a'), txt('bb'), txt('ccc'));
-            var r = p.exec('dddd');
+        test(1, function () {
+            var r = p.exec('a');
+            assert.equal(r, 'a');
+        });
 
-            assert(!r);
+        test(2, function () {
+            var r = p.exec('bb');
+            assert.equal(r, 'bb');
+        });
+
+        test(3, function () {
+            var r = p.exec('ccc');
+            assert.equal(r, 'ccc');
+        });
+
+        test(4, function () {
+            var r = p.exec('aaaa');
+            assert.equal(r, null);
+        });
+
+        test(5, function () {
+            var r = p.exec('bbbb');
+            assert.equal(r, null);
+        });
+
+        test(6, function () {
+            var r = p.exec('cccc');
+            assert.equal(r, null);
+        });
+
+        test(7, function () {
+            var p = any(txt('a'));
+            assert.equal(p.exec('a'), 'a');
+            assert.equal(p.exec('b'), null);
+            assert.equal(p.exec(''), null);
+        });
+
+        test(8, function () {
+            var p = any(txt(''));
+            assert.equal(p.exec('a'), null);
+            assert.equal(p.exec(''), '');
         });
 
         test('toString', function () {
-            var p = any(txt('abc'), txt('123'), opt(rgx(/x/)));
-            assert.equal(p + '', '("abc" | "123" | /x/?)');
+            assert.equal(p, '("a" | "bb" | "ccc")');
         });
     });
 
     suite('seq', function () {
-        test('1.1', function () {
+        test(1, function () {
             var p = seq(rgx(/a+/), rgx(/b+/), rgx(/c+/));
             var r = p.exec('abbccc');
 
-            assert.deepEqual(r[0], ['a', 'bb', 'ccc']);
-            assert.equal(r.end, 6);
+            assert.deepEqual(r, ['a', 'bb', 'ccc']);
         });
 
-        test('1.2', function () {
+        test(2, function () {
             var p = seq(rgx(/a+/), rgx(/b*/), opt(rgx(/c+/)), rgx(/d+/));
             var r = p.exec('adddd');
 
-            assert.deepEqual(r[0], ['a', '', void 0, 'dddd']);
-            assert.equal(r.end, 5);
+            assert.deepEqual(r, ['a', '', void 0, 'dddd']);
         });
 
-        test('1.3', function () {
+        test(3, function () {
             var d = txt('1');
             var p = seq(seq(seq(d), seq(d)), seq(seq(d), seq(d)));
-            var r = p.exec('11112222');
+            var r = p.exec('1111');
 
-            assert.deepEqual(r[0], [[['1'], ['1']], [['1'], ['1']]]);
-            assert.equal(r.end, 4);
+            assert.deepEqual(r, [[['1'], ['1']], [['1'], ['1']]]);
         });
 
-        test('2', function () {
+        test(4, function () {
             var p = seq(rgx(/a+/), rgx(/b+/), rgx(/c+/));
             var r = p.exec('abbdddd');
 
-            assert(!r);
+            assert.equal(r, null);
         });
 
         test('toString', function () {
             var p = seq(txt('abc'), txt('123'), opt(rgx(/x/)));
-            assert.equal(p + '', '("abc" "123" /x/?)');
+            assert.equal(p, '("abc" "123" /x/?)');
         });
     });
 
     suite('rep', function () {
         suite('regular', function () {
-            test('accepts', function () {
-                var p = rep(txt('abc'));
-                var r = p.exec('abcabcabc');
+            suite('accepts', function () {
+                test(1, function () {
+                    var p = rep(txt('abc'));
+                    var r = p.exec('abcabcabc');
 
-                assert.deepEqual(r[0], ['abc', 'abc', 'abc']);
-                assert(r.end, 9);
+                    assert.deepEqual(r, ['abc', 'abc', 'abc']);
+                });
+
+                test(2, function () {
+                    var p = rep(rep(txt('abc')));
+                    var r = p.exec('abcabcabc');
+
+                    assert.deepEqual(r, [['abc', 'abc', 'abc']]);
+                });
+
+                test(3, function () {
+                    var p = rep(opt(txt('abc')));
+                    var r = p.exec('abcabc');
+
+                    assert.deepEqual(r, ['abc', 'abc']);
+                });
+
+                test(4, function () {
+                    var p = seq(rep(opt(txt('abc'))), txt('def'));
+                    var r = p.exec('abcdef');
+
+                    assert.deepEqual(r, [['abc'], 'def']);
+                });
             });
 
-            test('accepts', function () {
-                var p = rep(rep(txt('abc')));
-                var r = p.exec('abcabcabc');
+            suite('rejects', function () {
+                test(1, function () {
+                    var p = rep(txt('abc'));
+                    var r = p.exec('def');
 
-                assert.deepEqual(r[0], [['abc', 'abc', 'abc']]);
-                assert(r.end, 9);
-            });
+                    assert.equal(r, null);
+                });
 
-            test('accepts', function () {
-                var p = rep(txt('abc'));
-                var r = p.exec('abcabcabd');
+                test(2, function () {
+                    var p = rep(txt(''));
+                    var r = p.exec('abc');
 
-                assert.deepEqual(r[0], ['abc', 'abc']);
-                assert(r.end, 6);
-            });
+                    assert.equal(r, null);
+                });
 
-            test('accepts', function () {
-                var p = rep(opt(txt('abc')));
-                var r = p.exec('abcabcabd');
+                test(3, function () {
+                    var p = rep(txt('abc'));
+                    var r = p.exec('');
 
-                assert.deepEqual(r[0], ['abc', 'abc']);
-                assert(r.end, 6);
-            });
-
-            test('rejects', function () {
-                var p = rep(txt('abc'));
-                var r = p.exec('def');
-
-                assert(!r);
-            });
-
-            test('rejects', function () {
-                var p = rep(txt(''));
-                var r = p.exec('abc');
-
-                assert(!r);
+                    assert.equal(r, null);
+                });
             });
 
             test('toString', function () {
                 var p = rep(txt('123'));
-                assert.equal(p + '', '"123"*');
+                assert.equal(p, '"123"*');
             });
         });
 
         suite('separated', function () {
-            test('accepts', function () {
-                var p = rep(txt('abc'), txt(','));
-                var r = p.exec('abc,abc,abc');
+            suite('accepts', function () {
+                test(1, function () {
+                    var p = rep(txt('abc'), txt(','));
+                    var r = p.exec('abc,abc,abc');
 
-                assert.deepEqual(r[0], ['abc', 'abc', 'abc']);
-                assert(r.end, 11);
+                    assert.deepEqual(r, ['abc', 'abc', 'abc']);
+                });
+
+                test(2, function () {
+                    var p = rep(rep(txt('abc'), txt(',')), txt(','));
+                    var r = p.exec('abc,abc,abc');
+
+                    assert.deepEqual(r, [['abc', 'abc', 'abc']]);
+                });
+
+                test(3, function () {
+                    var p = rep(rep(rgx(/\w+/), txt('=')), txt('&'));
+                    var r = p.exec('abc=123&def=456');
+
+                    assert.deepEqual(r, [['abc', '123'], ['def', '456']]);
+                });
+
+                test(4, function () {
+                    var p = rep(opt(txt('abc')), txt(','));
+                    var r = p.exec('abc,abc');
+
+                    assert.deepEqual(r, ['abc', 'abc']);
+                });
             });
 
-            test('accepts', function () {
-                var p = rep(rep(txt('abc'), txt(',')), txt(','));
-                var r = p.exec('abc,abc,abc');
+            suite('rejects', function () {
+                test(1, function () {
+                    var p = rep(txt('abc'), txt(','));
+                    var r = p.exec('abc,abc,abd');
 
-                assert.deepEqual(r[0], [['abc', 'abc', 'abc']]);
-                assert(r.end, 11);
-            });
+                    assert.equal(r, null);
+                });
 
-            test('accepts', function () {
-                var p = rep(txt('abc'), txt(','));
-                var r = p.exec('abc,abc,abd');
+                test(2, function () {
+                    var p = rep(txt('abc'), txt(','));
+                    var r = p.exec('def');
 
-                assert.deepEqual(r[0], ['abc', 'abc']);
-                assert(r.end, 7);
-            });
+                    assert.equal(r, null);
+                });
 
-            test('accepts', function () {
-                var p = rep(rep(rgx(/\w+/), txt('=')), txt('&'));
-                var r = p.exec('abc=123&def=456;qqq');
+                test(3, function () {
+                    var p = rep(txt(''), txt(','));
+                    var r = p.exec('abc');
 
-                assert.deepEqual(r[0], [['abc', '123'], ['def', '456']]);
-                assert(r.end, 15);
-            });
-
-            test('accepts', function () {
-                var p = rep(opt(txt('abc')), txt(','));
-                var r = p.exec('abc,abc,abd');
-
-                assert.deepEqual(r[0], ['abc', 'abc', void 0]);
-                assert(r.end, 7);
-            });
-
-            test('rejects', function () {
-                var p = rep(txt('abc'), txt(','));
-                var r = p.exec('def');
-
-                assert(!r);
-            });
-
-            test('rejects', function () {
-                var p = rep(txt(''), txt(','));
-                var r = p.exec('abc');
-
-                assert(!r);
+                    assert.equal(r, null);
+                });
             });
 
             test('toString', function () {
                 var p = rep(rgx(/\d+/), txt(','));
-                assert.equal(p + '', '/\\d+/*:","');
+                assert.equal(p, '/\\d+/*');
             });
         });
     });
 
-    suite('Pattern', function () {
-        suite('then', function () {
-            test('simple', function () {
-                var p = rgx(/\d+/).then(function (s) { return 1 / +s });
-                var r = p.exec('10;def');
+    suite('then', function () {
+        test('simple', function () {
+            var p = rgx(/\d+/).
+                then(function (s) { return 1 / +s });
 
-                assert.equal(r[0], 0.1);
-                assert.equal(r.end, 2);
-            });
+            var r = p.exec('10');
 
-            test('chain', function () {
-                var p = rgx(/\d+/)
-                    .then(function (s) { return +s })
-                    .then(function (n) { return 1 / n });
-
-                var r = p.exec('10;def');
-
-                assert.equal(r[0], 0.1);
-                assert.equal(r.end, 2);
-            });
-
-            test('text', function () {
-                var n = rgx(/\d+/).then(function (s, t) { return t + '=>' + s });
-                var p = rep(n, txt(','));
-                var r = p.exec('123,456,789');
-
-                assert.deepEqual(r[0], ['123,456,789=>123', '456,789=>456', '789=>789']);
-                assert.equal(r.end, 11);
-            });
-
-            test('throws', function () {
-                var err;
-
-                try {
-                    rgx(/\d+/).then(function (s) { throw 'abc' }).exec('123');
-                } catch (e) {
-                    err = e;
-                }
-
-                assert.equal(err, 'abc');
-            });
+            assert.equal(r, 0.1);
         });
 
-        suite('select', function () {
-            test('1', function () {
-                var p = rep(rgx(/\w+/), txt(';')).select(2);
-                var r = p.exec('abc;def;ghi');
+        test('chain', function () {
+            var p = rgx(/\d+/)
+                .then(function (s) { return +s })
+                .then(function (n) { return 1 / n });
 
-                assert.equal(r[0], 'ghi');
-                assert.equal(r.end, 11);
-            });
+            var r = p.exec('10');
 
-            test('2', function () {
-                var p = rep(rgx(/\w+/), txt(';')).select(8);
-                var r = p.exec('abc;def;ghi');
+            assert.equal(r, 0.1);
+        });
 
-                assert.equal(r[0], void 0);
-                assert.equal(r.end, 11);
-            });
+        test('text', function () {
+            var n = rgx(/\d+/)
+                .then(function (s) { return +s + 1 })
+                .then(function (s, t) { return t + '=>' + s });
 
-            test('3', function () {
-                var p = rep(rgx(/\w+/), txt(';')).select('qwerty');
-                var r = p.exec('abc;def;ghi');
+            var p = rep(n, txt(','));
+            var r = p.exec('123,456,789');
 
-                assert.equal(r[0], void 0);
-                assert.equal(r.end, 11);
-            });
+            assert.deepEqual(r, ['123=>124', '456=>457', '789=>790']);
+        });
+
+        test('rejected', function () {
+            var n = 0;
+            var p = txt('a').then(function (s) { n = 1 });
+            var r = p.exec('b');
+
+            assert.equal(r, null);
+            assert.equal(n, 0);
         });
     });
 });

@@ -5,7 +5,9 @@
   "keywords": [
     "LL",
     "LL(k)",
-    "parser"
+    "parser",
+    "ABNF",
+    "RFC 5234"
   ],
   "version": "0.0.1",
   "bin": {
