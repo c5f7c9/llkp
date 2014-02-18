@@ -36,11 +36,13 @@ In addition to that every pattern can be amended by a custom transformation that
 
 It's quite obvious that with these parsing functions it's possible to write a LL(k) parser of a grammar written in ABNF, EBNF or PEG and then reconstitute from that textual representation a parsing function that will parse whatever the grammar defines, so it'll be possible to write in JS something like this:
 
-    var pattern = new EBNF('[scheme ":"] ["//" host [":" port]] ["/" path] ["?" query]');
-    var uri = pattern.exec('https://github.com:80/.../?qw=123');
+````js
+var pattern = new EBNF('[scheme ":"] ["//" host [":" port]] ["/" path] ["?" query]');
+var uri = pattern.exec('https://github.com:80/.../?qw=123');
 
-    if (uri.scheme == 'https')
-        ...
+if (uri.scheme == 'https')
+    ...
+````
 
 ### The structure of the library.
 
@@ -77,55 +79,75 @@ The Pattern class implements a generic parsing function. It has two methods:
 
 Any transformation of results given by a pattern can be done via its .then method. Some transformations are very common, so they are a part of this library as core.then.js:
 
-    var core = require('llkp/core.then');
-    var attr = core.seq(core.rgx(/\w+/), core.txt('='), core.rgx(/\w+/)).map({ key:0, val:2 })
+````js
+var core = require('llkp/core.then');
+var attr = core.seq(core.rgx(/\w+/), core.txt('='), core.rgx(/\w+/)).map({ key:0, val:2 })
     
-    attrs.exec('charset=utf8') == { key: 'charset', val: 'utf8' };
+attrs.exec('charset=utf8') == { key: 'charset', val: 'utf8' };
+````
 
 #### .select(index) - selects a value from an array
 
-     p = ABNF("<;> 1*digit").select(1);
-     p.exec(";123") == ["1", "2", "3"];
+````js
+p = ABNF("<;> 1*digit").select(1);
+p.exec(";123") == ["1", "2", "3"];
+````
 
 #### .join(iKey, iVal) - joins an array of key-value pairs into a dictionary
 
-     p = ABNF("1*{<;>}(1*digit <=> 1*digit)").join(0, 1);
-     p.exec("11=22;33=44;55=66") == { "11":"22", "33":"44", "55":"66" };
+````js
+p = ABNF("1*{<;>}(1*digit <=> 1*digit)").join(0, 1);
+p.exec("11=22;33=44;55=66") == { "11":"22", "33":"44", "55":"66" };
+````
 
 #### .merge(separator) - merges an array into a string
 
-     p = ABNF('1*{","}number', { number : /\d+/ }).merge('+');
-     p.exec('123,456,789') == '123+456+789';
+````js
+p = ABNF('1*{","}number', { number : /\d+/ }).merge('+');
+p.exec('123,456,789') == '123+456+789';
+````
 
 #### .as(key) - wraps the whole result into an object
 
-     p = ABNF(/\d+/).as('num');
-     p.exec('123') == { num : '123' };
+````js
+p = ABNF(/\d+/).as('num');
+p.exec('123') == { num : '123' };
+````
 
 #### .text() - returns the text span from the input that was used to build the result
 
-    p = ABNF(/\d+/).as('num').text();
-    p.exec('123abc') == '123'
+````js
+p = ABNF(/\d+/).as('num').text();
+p.exec('123abc') == '123'
+````
 
 #### .map({ ... }) - turns an array into a dictionary
 
-    p = ABNF('key "=" val').map({ key:0, val:2 });
-    p.exec('charset=utf-8') == { key:'charset', val:'utf-8' };
+````js
+p = ABNF('key "=" val').map({ key:0, val:2 });
+p.exec('charset=utf-8') == { key:'charset', val:'utf-8' };
+````
 
 #### .parseInt(radix) - turns a string into a number
 
-    p = ABNF(/[a-f\d]+/).parseInt(16);
-    p.exec('20') == 32;
+````js
+p = ABNF(/[a-f\d]+/).parseInt(16);
+p.exec('20') == 32;
+````
 
 #### .merge(separator) - merges array elements into a string
 
-    p = ABNF('*{" "}number').merge('+');
-    p.exec('1 2 3 4') == '1+2+3+4';
+````js
+p = ABNF('*{" "}number').merge('+');
+p.exec('1 2 3 4') == '1+2+3+4';
+````
 
 #### .flatten() - flattens an array of arrays into a flat array
 
-    p = ABNF('*{";"}(num "=" num)').flatten();
-    p.exec('1=2;3=4;5=6') == [1, '=', 2, 3, '=', 4, 5, '=', 6];
+````js
+p = ABNF('*{";"}(num "=" num)').flatten();
+p.exec('1=2;3=4;5=6') == [1, '=', 2, 3, '=', 4, 5, '=', 6];
+````
 
 ### The ABNF syntax.
 
@@ -133,19 +155,23 @@ One of well known ways to describe LL(k) grammars is ABNF. This syntax is used e
 
 The ABNF class uses core.thenjs (which uses core.js) to implement a parser of ABNF and build from it a parsing function. The interface of ABNF was designed after the built-in RegExp class. First take a look at the interface of RegExp:
 
-    var pattern = new RegExp('(abc|def)+');
-    var results = pattern.exec('abcdefabc');
+````js
+var pattern = new RegExp('(abc|def)+');
+var results = pattern.exec('abcdefabc');
     
-    results == ['abcdefabc', 'abc'];
+results == ['abcdefabc', 'abc'];
+````
 
 Now compare RegExp with the interface of ABNF:
 
+````js
     var ABNF = require('llkp/abnf');
 
     var pattern = new ABNF('1*("abc" / "def")');
     var results = pattern.exec('abcdefabc');
     
     results == ['abc', 'def', 'abc'];
+````
 
 ABNF implements the Pattern interface: it also has the .exec and .then methods, as well as all transformation methods from the Pattern's prototype.
 
