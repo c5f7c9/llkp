@@ -13,7 +13,7 @@ var p = new ABNF('1*{","}(key "=" val)', { key: /\w+/, val: /\w+/ }).join(0, 2);
 var r = p.exec('charset=utf8,type=text,subtype=html');
 
 r == { charset: 'utf8', type: 'text', subtype: 'html' };
-````js
+````
 
 TODO: same with EBNF and PEG
 
