@@ -1,17 +1,19 @@
 ## llkp - LL(k) parsers
 
-The goal of this library is to provide API that would look like the built-in RegExp class and would ley easily write parsers for structures that cannot be parsed with regular expressions, such as XML-like structures, the e-mail pattern defined in RFC 822, the data URL pattern and so on.
+The goal of this library is to provide API that would look like the built-in RegExp class and would let easily write parsers for structures that cannot be parsed with regular expressions, such as XML-like structures, the e-mail pattern defined in RFC 822, the data URL pattern and so on.
 
 ### Examples
 
 To parse a list of comma separated key-value pairs with a parser written as ABNF:
 
-    var ABNF = require('llkp/abnf');
+````js
+var ABNF = require('llkp/abnf');
 
-    var p = new ABNF('1*{","}(key "=" val)', { key: /\w+/, val: /\w+/ }).join(0, 2);
-    var r = p.exec('charset=utf8,type=text,subtype=html');
+var p = new ABNF('1*{","}(key "=" val)', { key: /\w+/, val: /\w+/ }).join(0, 2);
+var r = p.exec('charset=utf8,type=text,subtype=html');
 
-    r == { charset: 'utf8', type: 'text', subtype: 'html' };
+r == { charset: 'utf8', type: 'text', subtype: 'html' };
+````js
 
 TODO: same with EBNF and PEG
 
@@ -45,15 +47,15 @@ It's quite obvious that with these parsing functions it's possible to write a LL
 The core parsing functions are kept in a file that can be used as a separate lightweight library for constructing parsing functions manually. On top of the core parsing functions there will be a few RegExp-like classes that will implement different ways of defining a LL(k) grammar: ABNF, EBNF and PEG.
 
 * **core.js** - The core parsing functions that can be used as a separate library.
-* **core+transforms.js** - core.js + transform functions.
-* **abnf.js** - The ABNF syntax for defining LL(k) grammars on top of core+transforms.js.
-* **ebnf.js** - The EBNF syntax for defining LL(k) grammars on top of core+transforms.js.
-* **peg.js** - The PEG syntax for defining LL(k) grammars on top of core+transforms.js.
+* **core.then.js** - Pattern transformations on top of core.js.
+* **abnf.js** - The ABNF syntax for defining LL(k) grammars on top of core.then.js.
+* **ebnf.js** - The EBNF syntax for defining LL(k) grammars on top of core.then.js.
+* **peg.js** - The PEG syntax for defining LL(k) grammars on top of core.then.js.
 
-For instance abnf.js will define the ABNF class that like RegExp will accept a textual representation of a LL(k) grammar written in the ABNF style and will construct a parsing function that will be able to parse whatever the given grammar defines:
+For instance abnf.js defines the ABNF class that like RegExp accepts a textual representation of a LL(k) grammar written in the ABNF style and constructs a parsing function that is able to parse whatever the given grammar defines:
 
-* new ABNF('[scheme ":"] ["//" host ...') - will construct a parsing function based on the given grammar
-* ABNF::exec - will use the given grammar to parse an input
+* new ABNF('[scheme ":"] ["//" host ...') - constructs a parsing function based on the given grammar
+* ABNF::exec - uses the given grammar to parse an input
 
 ### Tests
 
@@ -73,68 +75,68 @@ The Pattern class implements a generic parsing function. It has two methods:
 
 ### Pattern transformations.
 
-Any transformation of results given by a pattern can be done via its .then method. Some transformations are very common, so they are a part of this library as core+transforms.js:
+Any transformation of results given by a pattern can be done via its .then method. Some transformations are very common, so they are a part of this library as core.then.js:
 
     var core = require('llkp/core.then');
     var attr = core.seq(core.rgx(/\w+/), core.txt('='), core.rgx(/\w+/)).map({ key:0, val:2 })
     
     attrs.exec('charset=utf8') == { key: 'charset', val: 'utf8' };
 
-#### .select(index) - Selects a value from an array.
+#### .select(index) - selects a value from an array
 
      p = ABNF("<;> 1*digit").select(1);
      p.exec(";123") == ["1", "2", "3"];
 
-#### .join(iKey, iVal) - Joins an array of key-value pairs into a dictionary.
+#### .join(iKey, iVal) - joins an array of key-value pairs into a dictionary
 
      p = ABNF("1*{<;>}(1*digit <=> 1*digit)").join(0, 1);
      p.exec("11=22;33=44;55=66") == { "11":"22", "33":"44", "55":"66" };
 
-#### .merge(separator) - Merges an array into a string.
+#### .merge(separator) - merges an array into a string
 
      p = ABNF('1*{","}number', { number : /\d+/ }).merge('+');
      p.exec('123,456,789') == '123+456+789';
 
-#### .as(key) - Wraps the whole result into an object.
+#### .as(key) - wraps the whole result into an object
 
      p = ABNF(/\d+/).as('num');
      p.exec('123') == { num : '123' };
 
-#### .text() - Returns the text span from the input that was used to build the result.
+#### .text() - returns the text span from the input that was used to build the result
 
     p = ABNF(/\d+/).as('num').text();
     p.exec('123abc') == '123'
 
-#### .map({ ... }) - Turns an array into a dictionary.
+#### .map({ ... }) - turns an array into a dictionary
 
     p = ABNF('key "=" val').map({ key:0, val:2 });
     p.exec('charset=utf-8') == { key:'charset', val:'utf-8' };
 
-#### .parseInt(radix) - Turns a string into a number.
+#### .parseInt(radix) - turns a string into a number
 
     p = ABNF(/[a-f\d]+/).parseInt(16);
     p.exec('20') == 32;
 
-#### .merge(separator) - Merges array elements into a string.
+#### .merge(separator) - merges array elements into a string
 
     p = ABNF('*{" "}number').merge('+');
     p.exec('1 2 3 4') == '1+2+3+4';
 
-#### .flatten() - Flattens an array of arrays into a flat array.
+#### .flatten() - flattens an array of arrays into a flat array
 
     p = ABNF('*{";"}(num "=" num)').flatten();
     p.exec('1=2;3=4;5=6') == [1, '=', 2, 3, '=', 4, 5, '=', 6];
 
 ### The ABNF syntax.
 
-One of well known ways to describe LL(k) grammars is ABNF. This syntax is used extensively in RFC documents to define the syntax of URI, e-mail, data URL and so on. The syntax of ABNF itself can also be expressed in ABNF and such ABNF of ABNF can be found in RFC 5234 which defines what ABNF is.
+One of well known ways to describe LL(k) grammars is ABNF. This syntax is used extensively in RFC documents to define the syntax of URI, e-mail, data URL and so on. The syntax of ABNF itself can also be expressed in ABNF and such ABNF of ABNF can be found in RFC 5234.
 
-The ABNF class uses core.js to implement a parser of ABNF and build from it a parsing function. The interface of ABNF was designed after the built-in RegExp class. First take a look at the interface of RegExp:
+The ABNF class uses core.thenjs (which uses core.js) to implement a parser of ABNF and build from it a parsing function. The interface of ABNF was designed after the built-in RegExp class. First take a look at the interface of RegExp:
 
     var pattern = new RegExp('(abc|def)+');
     var results = pattern.exec('abcdefabc');
     
-    results == ['abcdefabc12345', 'abc'];
+    results == ['abcdefabc', 'abc'];
 
 Now compare RegExp with the interface of ABNF:
 
