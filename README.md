@@ -86,63 +86,63 @@ var attr = core.seq(core.rgx(/\w+/), core.txt('='), core.rgx(/\w+/)).map({ key:0
 attrs.exec('charset=utf8') == { key: 'charset', val: 'utf8' };
 ````
 
-#### .select(index) - selects a value from an array
+.select(index) - selects a value from an array
 
 ````js
 p = ABNF("<;> 1*digit").select(1);
 p.exec(";123") == ["1", "2", "3"];
 ````
 
-#### .join(iKey, iVal) - joins an array of key-value pairs into a dictionary
+.join(iKey, iVal) - joins an array of key-value pairs into a dictionary
 
 ````js
 p = ABNF("1*{<;>}(1*digit <=> 1*digit)").join(0, 1);
 p.exec("11=22;33=44;55=66") == { "11":"22", "33":"44", "55":"66" };
 ````
 
-#### .merge(separator) - merges an array into a string
+.merge(separator) - merges an array into a string
 
 ````js
 p = ABNF('1*{","}number', { number : /\d+/ }).merge('+');
 p.exec('123,456,789') == '123+456+789';
 ````
 
-#### .as(key) - wraps the whole result into an object
+.as(key) - wraps the whole result into an object
 
 ````js
 p = ABNF(/\d+/).as('num');
 p.exec('123') == { num : '123' };
 ````
 
-#### .text() - returns the text span from the input that was used to build the result
+.text() - returns the text span from the input that was used to build the result
 
 ````js
 p = ABNF(/\d+/).as('num').text();
 p.exec('123abc') == '123'
 ````
 
-#### .map({ ... }) - turns an array into a dictionary
+.map({ ... }) - turns an array into a dictionary
 
 ````js
 p = ABNF('key "=" val').map({ key:0, val:2 });
 p.exec('charset=utf-8') == { key:'charset', val:'utf-8' };
 ````
 
-#### .parseInt(radix) - turns a string into a number
+.parseInt(radix) - turns a string into a number
 
 ````js
 p = ABNF(/[a-f\d]+/).parseInt(16);
 p.exec('20') == 32;
 ````
 
-#### .merge(separator) - merges array elements into a string
+.merge(separator) - merges array elements into a string
 
 ````js
 p = ABNF('*{" "}number').merge('+');
 p.exec('1 2 3 4') == '1+2+3+4';
 ````
 
-#### .flatten() - flattens an array of arrays into a flat array
+.flatten() - flattens an array of arrays into a flat array
 
 ````js
 p = ABNF('*{";"}(num "=" num)').flatten();
@@ -165,12 +165,12 @@ results == ['abcdefabc', 'abc'];
 Now compare RegExp with the interface of ABNF:
 
 ````js
-    var ABNF = require('llkp/abnf');
+var ABNF = require('llkp/abnf');
 
-    var pattern = new ABNF('1*("abc" / "def")');
-    var results = pattern.exec('abcdefabc');
+var pattern = new ABNF('1*("abc" / "def")');
+var results = pattern.exec('abcdefabc');
     
-    results == ['abc', 'def', 'abc'];
+results == ['abc', 'def', 'abc'];
 ````
 
 ABNF implements the Pattern interface: it also has the .exec and .then methods, as well as all transformation methods from the Pattern's prototype.
