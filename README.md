@@ -12,24 +12,24 @@ var ABNF = require('llkp/abnf');
 var p = new ABNF('1*{","}(key "=" val)', { key: /\w+/, val: /\w+/ }).join(0, 2);
 var r = p.exec('charset=utf8,type=text,subtype=html');
 
-r == { charset: 'utf8', type: 'text', subtype: 'html' };
+assert.deepEqual(r, { charset: 'utf8', type: 'text', subtype: 'html' });
 ````
 
 TODO: same with EBNF and PEG
 
 ### The idea of the library.
 
-The core of this library is a set of simple parsing functions that can be combines into more complicated parsing functions. A parsing function (a pattern) reads an input and returns whatever it has parsed as well as the position where it ended reading input. Here is the list of such core parsing functions:
+The core of this library is a set of simple parsing functions that can be combined into more complicated parsing functions. A parsing function (a pattern) reads an input and returns whatever it has parsed as well as the position where it ended reading input. Here is the list of such core parsing functions:
 
 * txt - compares the input with a fixed given string and returns that string if it matches the input
-* rgx - same as txt, but compares the input with a regular expression of almost any complexity:
-* opt - makes a pattern optional: if it doesn't match input, returns null
+* rgx - same as txt, but compares the input with a regular expression
+* opt - makes a pattern optional: if it doesn't match the input, returns null
 * any - combines a few patterns together and makes another pattern that reads the input, applies the patterns one by one and returns whatever the first matched pattern returned
 * seq - combines a few patterns together and makes another pattern that reads the input, applies the patterns one by one and returns the array of results returned by the patterns
-* rep - takes a pattern and constructs another one, that tries to apply the given pattern to the input several times and return the array of results
+* rep - takes a pattern and constructs another one, that tries to apply the given pattern to the input several times and returns the array of results
 * exc - makes a pattern that matches the first pattern but not the second one
 
-In addition to that every pattern has the .then method that builts another pattern on top of the given one by transforming its result with a given function. In the example below this trick is used to construct a parsing function that reads a comma separated name value pairs and returns them as a dictionary:
+In addition to that every pattern has the .then method that builts another pattern on top of the given one by transforming its result with a given function. In the example below this trick is used to construct a parsing function that reads a comma separated list of name value pairs and returns them as a dictionary:
 
 ````js
 var pair = seq(rgx(/\w+/), txt('='), rgx(/\w+/));
