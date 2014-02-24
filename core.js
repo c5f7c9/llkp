@@ -35,7 +35,7 @@
     function rgx(regexp) {
         return new Pattern(regexp + '', function (str, pos) {
             var m = regexp.exec(str.slice(pos));
-            if (m && m.index == 0) // regex must match at the beginning, so index must be 0
+            if (m && m.index === 0) // regex must match at the beginning, so index must be 0
                 return { res: m[0], end: pos + m[0].length };
         });
     }

@@ -74,7 +74,7 @@
 
     
     if (typeof module != typeof void 0) // for Node
-        (module.exports = require('./core')).Pattern.prototype = transforms
+        (module.exports = require('./core')).Pattern.prototype = transforms;
 
     if (typeof window != typeof void 0) // for browsers
         window.LLKP.Pattern.prototype = transforms;

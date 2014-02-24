@@ -68,7 +68,16 @@ Unit tests were written in the mocha's TDD style:
     npm install -g mocha
     mocha -u tdd
 
-TODO: code coverage
+### Code coverage
+
+TBD
+
+### Static analysis
+
+Static analysis is done by JSHint:
+
+    npm install -g jshint
+    jshint --verbose core.js core.then.js abnf.js
 
 ### The Pattern class.
 
