@@ -81,7 +81,7 @@ TBD
 Static analysis is done by JSHint:
 
     npm install -g jshint
-    jshint --verbose core.js core.then.js abnf.js
+    jshint --verbose .
 
 ### The Pattern class.
 
@@ -188,6 +188,87 @@ results == ['abc', 'def', 'abc'];
 ````
 
 ABNF implements the Pattern interface: it also has the .exec and .then methods, as well as all transformation methods from the Pattern's prototype.
+
+### Debugging
+
+Debugging API becomes available after including core.debug.js - it extends Pattern.prototype with methods that help to debug complicated parsers. If it's unclear why a parsing function combined from other parsing functions returns null on certain input, some of those parsing functions may be watched. In the examplebelow it's unclear why the parser refuses to parse the given input:
+
+````js
+    require("llkp/abnf");
+
+    var input = 'a(1, 2, b(4), c(), d(4, 5, 6), 8)';
+
+    var pattern = ABNF('expr', function ($) {
+        this.expr = $('name "(" *{sep}arg ")"');
+        this.arg = $('expr / num');
+        this.name = /\w+/;
+        this.num = $(/\d+/).parseFloat();
+        this.sep = /\s\,\s*/;
+    });
+
+    var ast = pattern.exec(input);
+````
+
+To find the cause of this some parsing functions may be watched:
+
+````js
+    require("llkp/core.debug");
+
+    var pattern = ABNF('expr', function ($) {
+        this.expr = $('name "(" *{sep}arg ")"').watch('expr');
+        this.arg = $('expr / num').watch();
+        this.name = $(/\w+/).watch('name');
+        this.num = $(/\d+/).parseFloat().watch('num');
+        this.sep = $(/\s*\,\s*/).watch('sep');
+    });
+
+    var ast = pattern.exec(input);
+````
+
+Now pattern.exec reports about progress in the console:
+
+     1. (name "(" arg* ")") : "a(1,\x202,\x20b(4),\x20c(),\x20d"
+     2. |  /\w+/ : "a(1,\x202,\x20b(4),\x20c(),\x20d"
+     3. |  /\w+/ : "a(1,\x202,\x20b(4),\x20c(),\x20d" => a
+     4. |  (expr | num) : "1,\x202,\x20b(4),\x20c(),\x20d"
+     5. |  |  (name "(" arg* ")") : "1,\x202,\x20b(4),\x20c(),\x20d"
+     6. |  |  |  /\w+/ : "1,\x202,\x20b(4),\x20c(),\x20d"
+     7. |  |  |  /\w+/ : "1,\x202,\x20b(4),\x20c(),\x20d" => 1
+     8. |  |  (name "(" arg* ")") : "1,\x202,\x20b(4),\x20c(),\x20d" => null
+     9. |  |  /\d+/ : "1,\x202,\x20b(4),\x20c(),\x20d"
+    10. |  |  /\d+/ : "1,\x202,\x20b(4),\x20c(),\x20d" => 1
+    11. |  (expr | num) : "1,\x202,\x20b(4),\x20c(),\x20d" => 1
+    12. |  /\s*\,\s*/ : ",\x202,\x20b(4),\x20c(),\x20d"
+    13. |  /\s*\,\s*/ : ",\x202,\x20b(4),\x20c(),\x20d" => null
+    14. (name "(" arg* ")") : "a(1,\x202,\x20b(4),\x20c(),\x20d" => null
+
+Now it becomes clear that at step 11 the parser assumed that "1" in "a(1, ..." is
+the name of the expression, while it should be a numeric argument to "a".
+This happened because the pattern for this.name parses numbers as well.
+It can be fixed to parse names only:
+
+````js
+    var input = 'a(1, 2, b(4), c(), d(4, 5, 6), 8)';
+
+    var pattern = ABNF('expr', function ($) {
+        this.expr = $('name "(" *{sep}arg ")"');
+        this.arg = $('expr / num');
+        this.name = $(/[a-z]\w*/i);
+        this.num = $(/\d+/).parseFloat();
+        this.sep = $(/\s*\,\s*/);
+    });
+
+    var ast = pattern.exec(input);
+
+    assert.deepEqual(ast, [
+        "a", "(", [
+        1,
+        2,
+        ["b", "(", [4], ")"],
+        ["c", "(", [], ")"],
+        ["d", "(", [4, 5, 6], ")"], 8],
+    ")"]);
+````
 
 ### The EBNF syntax.
 

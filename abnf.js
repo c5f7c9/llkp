@@ -6,7 +6,7 @@
 
     var core = typeof window != typeof void 0 ?
         window.LLKP.Core :
-        require('./core.then');
+        (require('./core.then'), require('./core'));
 
     var Pattern = core.Pattern;
     var txt = core.txt;

@@ -1,5 +1,7 @@
 var assert = require('assert');
-var core = require('../core.then');
+var core = require('../core');
+
+require('../core.then');
 
 var txt = core.txt;
 var rgx = core.rgx;
