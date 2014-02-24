@@ -50,7 +50,7 @@ suite('ABNF', function () {
     });
 
     suite('BasicParsing', function () {
-        psuite('Text', {
+        psuite('DoubleQuotedText', {
             '""': {
                 '': '',
                 ' ': null,
@@ -63,171 +63,56 @@ suite('ABNF', function () {
                 'ab': null,
                 'abcd': null,
                 '': null
-            }
-        });
-
-        psuite('Sequence', {
-            '"abc" "123" "xyz"': {
-                'abc123xyz': ['abc', '123', 'xyz'],
-                'abc123xy9': null,
-                'abc 123 xyz': null,
-                'abc124xyz': null,
-                'def123xyz': null
             },
 
-            '"123" "" "" ""': {
-                '123': ['123', '', '', ''],
-                '123 ': null,
-                '123   ': null,
-                ' 123': null,
-                '1 2 3': null
-            },
-
-            '"" "" "" "123"': {
-                '123': ['', '', '', '123'],
-                '  123': null,
-                '1 2 3': null,
-                ' 123 ': null
-            },
-
-            '"123" "" "456"': {
-                '123456': ['123', '', '456'],
-                '123 456': null,
-                '123456 ': null,
-                '123567': null
-            }
-        });
-
-        psuite('Alternation', {
-            '1*{" "}("abc" / <def> / \'ghi\')': {
-                'abc ghi def': ['abc', 'ghi', 'def'],
-                'def ghi': ['def', 'ghi'],
-                'abc def ghi': ['abc', 'def', 'ghi'],
-                'abc': ['abc'],
-
-                'abc def ihg': null,
-                '': null,
-            },
-
-            '"123" "abc" / "123" "def"': {
-                '123def': ['123', 'def'],
-                '123abc': ['123', 'abc'],
-                '123qwe': null
-            },
-
-            '*("1" / "2" / "3" / "4")': {
-                '4321': ['4', '3', '2', '1'],
-                '1234': ['1', '2', '3', '4'],
-                '1111': ['1', '1', '1', '1'],
-                '': [],
-                '3245': null
-            },
-
-            '"q" / "w" / "r"': {
-                'q': 'q',
-                'w': 'w',
-                'r': 'r',
-                't': null,
+            '"a" "b"': {
+                'ab': ['a', 'b'],
+                'a b': null,
                 '': null
-            },
-
-            '*?("1" / "2" / "3") "45"': {
-                '12345': [['1', '2', '3'], '45'],
-                '45': [[], '45'],
-                '11133322245': [['1', '1', '1', '3', '3', '3', '2', '2', '2'], '45'],
-                '': null,
-                '123': null
-            },
-
-            '*("e" "f" / ?("a" "b" / "c" "d"))': {
-                'efef': [['e', 'f'], ['e', 'f']],
-                '': [],
-                'we': null
             }
         });
 
-        psuite('Group', {
-            '("abc" "123") "456"': {
-                'abc123456': [['abc', '123'], '456'],
-                'abc345456': null,
-                '': null
+        psuite('SingleQuotedText', {
+            "''": {
+                '': '',
+                ' ': null,
+                'a': null,
+                '\n': null
             },
 
-            '("abc")': {
+            "'abc'": {
                 'abc': 'abc',
-                'def': null,
+                'ab': null,
+                'abcd': null,
+                '': null
+            },
+
+            "'a' 'b'": {
+                'ab': ['a', 'b'],
+                'a b': null,
                 '': null
             }
         });
 
-        psuite('Option', {
-            '?"a"': {
-                'a': 'a',
-                '': void 0,
-                'b': null
+        psuite('AngleQuotedText', {
+            '<>': {
+                '': '',
+                ' ': null,
+                'a': null,
+                '\n': null
             },
 
-            '??"abc"': {
+            '<abc>': {
                 'abc': 'abc',
-                '': void 0,
-                'def': null
-            },
-
-            '?"abc" "def"': {
-                'def': [void 0, 'def'],
-                'abcdef': ['abc', 'def'],
-                'qwe': null,
+                'ab': null,
+                'abcd': null,
                 '': null
             },
 
-            '??"abc" "def"': {
-                'def': [void 0, 'def'],
-                'abcdef': ['abc', 'def'],
-                'abc': null,
+            '<a> <b>': {
+                'ab': ['a', 'b'],
+                'a b': null,
                 '': null
-            },
-
-            '"123" ?"456" "789" ?"abc"': {
-                '123789': ['123', void 0, '789', void 0],
-                '123456789abc': ['123', '456', '789', 'abc'],
-                '': null
-            },
-
-            '"abc" ??????????????????????"123"': {
-                'abc': ['abc', void 0],
-                'abc123': ['abc', '123'],
-                '123': null
-            },
-
-            '["1" "2"]': {
-                '12': ['1', '2'],
-                '': void 0
-            },
-
-            '["1" "2"] "3" "4"': {
-                '34': [void 0, '3', '4'],
-                '1234': [['1', '2'], '3', '4'],
-                '134': null
-            },
-
-            '*(["1" "2"] ["3" "4"])': {
-                '3412': [[void 0, ['3', '4']], [['1', '2'], void 0]],
-                '1234': [[['1', '2'], ['3', '4']]],
-                '': [],
-
-                '1': null
-            },
-
-            '["abc"]': {
-                'abc': 'abc',
-                '': void 0,
-                'def': null
-            },
-
-            '[(<https>/<http>) <:>] <//>': {
-                'http://': [['http', ':'], '//'],
-                'https://': [['https', ':'], '//'],
-                'httpss://': null
             }
         });
 
@@ -289,6 +174,179 @@ suite('ABNF', function () {
                 '.': '.',
                 '\u3245': '\u3245',
                 '': null
+            },
+
+            '"a" ?.': {
+                'ab': ['a', 'b'],
+                'a': ['a', void 0],
+                'b': null,
+                '': null
+            }
+        });
+
+        psuite('Option', {
+            '?"a"': {
+                'a': 'a',
+                '': void 0,
+                'b': null
+            },
+
+            '??"abc"': {
+                'abc': 'abc',
+                '': void 0,
+                'def': null
+            },
+
+            '?"abc" "def"': {
+                'def': [void 0, 'def'],
+                'abcdef': ['abc', 'def'],
+                'qwe': null,
+                '': null
+            },
+
+            '??"abc" "def"': {
+                'def': [void 0, 'def'],
+                'abcdef': ['abc', 'def'],
+                'abc': null,
+                '': null
+            },
+
+            '"123" ?"456" "789" ?"abc"': {
+                '123789': ['123', void 0, '789', void 0],
+                '123456789abc': ['123', '456', '789', 'abc'],
+                '': null
+            },
+
+            '"abc" ??????????????????????"123"': {
+                'abc': ['abc', void 0],
+                'abc123': ['abc', '123'],
+                '123': null
+            }
+        });
+
+        psuite('Group', {
+            '("abc" "123") "456"': {
+                'abc123456': [['abc', '123'], '456'],
+                'abc345456': null,
+                '': null
+            },
+
+            '("abc")': {
+                'abc': 'abc',
+                'def': null,
+                '': null
+            }
+        });
+
+        psuite('OptionalGroup', {
+            '["abc"]': {
+                'abc': 'abc',
+                '': void 0,
+                'def': null
+            },
+            
+            '["1" "2"]': {
+                '12': ['1', '2'],
+                '': void 0
+            },
+
+            '["1" "2"] "3" "4"': {
+                '34': [void 0, '3', '4'],
+                '1234': [['1', '2'], '3', '4'],
+                '134': null
+            },
+
+            '*(["1" "2"] ["3" "4"])': {
+                '3412': [[void 0, ['3', '4']], [['1', '2'], void 0]],
+                '1234': [[['1', '2'], ['3', '4']]],
+                '': [],
+
+                '1': null
+            },
+
+            '[(<https>/<http>) <:>] <//>': {
+                'http://': [['http', ':'], '//'],
+                'https://': [['https', ':'], '//'],
+                'httpss://': null
+            }
+        });
+
+        psuite('Sequence', {
+            '"abc" "123" "xyz"': {
+                'abc123xyz': ['abc', '123', 'xyz'],
+                'abc123xy9': null,
+                'abc 123 xyz': null,
+                'abc124xyz': null,
+                'def123xyz': null
+            },
+
+            '"123" "" "" ""': {
+                '123': ['123', '', '', ''],
+                '123 ': null,
+                '123   ': null,
+                ' 123': null,
+                '1 2 3': null
+            },
+
+            '"" "" "" "123"': {
+                '123': ['', '', '', '123'],
+                '  123': null,
+                '1 2 3': null,
+                ' 123 ': null
+            },
+
+            '"123" "" "456"': {
+                '123456': ['123', '', '456'],
+                '123 456': null,
+                '123456 ': null,
+                '123567': null
+            }
+        });
+
+        psuite('Alternation', {
+            '1*{" "}("abc" / <def> / \'ghi\')': {
+                'abc ghi def': ['abc', 'ghi', 'def'],
+                'def ghi': ['def', 'ghi'],
+                'abc def ghi': ['abc', 'def', 'ghi'],
+                'abc': ['abc'],
+                'abc def ihg': null,
+                '': null,
+            },
+
+            '"123" "abc" / "123" "def"': {
+                '123def': ['123', 'def'],
+                '123abc': ['123', 'abc'],
+                '123qwe': null
+            },
+
+            '*("1" / "2" / "3" / "4")': {
+                '4321': ['4', '3', '2', '1'],
+                '1234': ['1', '2', '3', '4'],
+                '1111': ['1', '1', '1', '1'],
+                '': [],
+                '3245': null
+            },
+
+            '"q" / "w" / "r"': {
+                'q': 'q',
+                'w': 'w',
+                'r': 'r',
+                't': null,
+                '': null
+            },
+
+            '*?("1" / "2" / "3") "45"': {
+                '12345': [['1', '2', '3'], '45'],
+                '45': [[], '45'],
+                '11133322245': [['1', '1', '1', '3', '3', '3', '2', '2', '2'], '45'],
+                '': null,
+                '123': null
+            },
+
+            '*("e" "f" / ?("a" "b" / "c" "d"))': {
+                'efef': [['e', 'f'], ['e', 'f']],
+                '': [],
+                'we': null
             }
         });
 
@@ -1124,170 +1182,218 @@ suite('ABNF', function () {
             assert(parsed);
         });
 
-        test('XML', function () {
-            var s =
-                '<root attr-1="value-1" attr-2>' +
-                    '<aaa x="1" y="2" z="3">' +
-                        '<aaa-1>some text inside aaa-1</aaa-1>' +
-                        '<aaa-empty p q="2 3 4" r/>' +
-                    '</aaa>' +
-                    '<empty-tag/>' +
-                    '<empty-tag-with-attr attr-1/>' +
-                    '<w1><w2><w3></w3></w2></w1>' +
-                '</root>';
+        suite('XML', function () {
+            var p;
 
-            // this is a simplified grammar of XML:
-            var p = ABNF('node', function (rule) {
-                this['node'] = rule('normal-node / empty-node');
-                this['empty-node'] = rule('"<" name ?wsp ?attrs "/>"').map({ name: 1, attrs: 3 });
-                this['normal-node'] = rule('"<" name ?wsp ?attrs ">" *(node / text) "</" name ">"')
-                    .then(function (r) {
-                        if (r[1] == r[7]) return r;
-                        throw new SyntaxError('Invalid XML: ' + r[7] + ' does not match ' + r[1]);
-                    })
-                    .map({ name: 1, attrs: 3, subnodes: 5 });
-                this['attrs'] = rule('1*{wsp}attr').join('name', 'value');
-                this['value'] = rule('"=" str').select(1);
-                this['attr'] = rule('name ?value').map({ name: 0, value: 1 });
-                this['str'] = rule('<"> *(escaped / . ~ <">) <">').select(1).merge();
-                this['escaped'] = rule('%x5c .').select(1);
-                this['text'] = /[^<>]+/;
-                this['name'] = /[a-zA-Z\-0-9\:]+/;
-                this['wsp'] = /[\x00-\x20]+/;
+            setup(function () {
+                // this is a simplified grammar of XML:
+                p = ABNF('node', function (rule) {
+                    this['node'] = rule('normal-node / empty-node');
+                    this['empty-node'] = rule('"<" name ?wsp ?attrs "/>"').map({ name: 1, attrs: 3 });
+                    this['normal-node'] = rule('"<" name ?wsp ?attrs ">" *(node / text) "</" name ">"')
+                        .then(function (r) {
+                            if (r[1] == r[7]) return r;
+                            throw new SyntaxError('Invalid XML: ' + r[7] + ' does not match ' + r[1]);
+                        })
+                        .map({ name: 1, attrs: 3, subnodes: 5 });
+                    this['attrs'] = rule('1*{wsp}attr').join('name', 'value');
+                    this['value'] = rule('"=" str').select(1);
+                    this['attr'] = rule('name ?value').map({ name: 0, value: 1 });
+                    this['str'] = rule('<"> *(escaped / . ~ <">) <">').select(1).merge();
+                    this['escaped'] = rule('%x5c .').select(1);
+                    this['text'] = /[^<>]+/;
+                    this['name'] = /[a-zA-Z\-0-9\:]+/;
+                    this['wsp'] = /[\x00-\x20]+/;
+                });
             });
 
-            assert.throws(
-                function () { p.exec('<abc>123</def>') },
-                'SyntaxError: Invalid XML: def does not match abc');
+            test('Invalid', function () {
+                assert.throws(
+                    function () { p.exec('<abc>123</def>') },
+                    'SyntaxError: Invalid XML: def does not match abc');
+            });
 
-            assert.deepEqual(p.exec('<abc>123</abc>'), { name: 'abc', attrs: void 0, subnodes: ['123'] });
+            test('Simple', function () {
+                assert.deepEqual(
+                    p.exec('<abc>123</abc>'),
+                    { name: 'abc', attrs: void 0, subnodes: ['123'] });
+            });
 
-            var r = {
-                name: 'root',
-                attrs: { 'attr-1': 'value-1', 'attr-2': void 0 },
-                subnodes: [
-                    {
-                        name: 'aaa',
-                        attrs: { x: '1', y: '2', z: '3' },
-                        subnodes: [
-                            {
-                                name: 'aaa-1',
-                                attrs: void 0,
-                                subnodes: ['some text inside aaa-1']
-                            },
-                           {
-                               name: 'aaa-empty',
-                               attrs: { p: void 0, q: '2 3 4', r: void 0 }
-                           }
-                        ]
-                    },
-                   { name: 'empty-tag', attrs: void 0 },
-                   { name: 'empty-tag-with-attr', attrs: { 'attr-1': void 0 } },
-                   {
-                       name: 'w1',
-                       attrs: void 0,
-                       subnodes: [{
-                           name: 'w2',
+            test('Complex', function () {
+                var s =
+                    '<root attr-1="value-1" attr-2>' +
+                        '<aaa x="1" y="2" z="3">' +
+                            '<aaa-1>some text inside aaa-1</aaa-1>' +
+                            '<aaa-empty p q="2 3 4" r/>' +
+                        '</aaa>' +
+                        '<empty-tag/>' +
+                        '<empty-tag-with-attr attr-1/>' +
+                        '<w1><w2><w3></w3></w2></w1>' +
+                    '</root>';
+
+                var r = {
+                    name: 'root',
+                    attrs: { 'attr-1': 'value-1', 'attr-2': void 0 },
+                    subnodes: [
+                        {
+                            name: 'aaa',
+                            attrs: { x: '1', y: '2', z: '3' },
+                            subnodes: [
+                                {
+                                    name: 'aaa-1',
+                                    attrs: void 0,
+                                    subnodes: ['some text inside aaa-1']
+                                },
+                               {
+                                   name: 'aaa-empty',
+                                   attrs: { p: void 0, q: '2 3 4', r: void 0 }
+                               }
+                            ]
+                        },
+                       { name: 'empty-tag', attrs: void 0 },
+                       { name: 'empty-tag-with-attr', attrs: { 'attr-1': void 0 } },
+                       {
+                           name: 'w1',
                            attrs: void 0,
-                           subnodes: [{ name: 'w3', attrs: void 0, subnodes: [] }]
+                           subnodes: [{
+                               name: 'w2',
+                               attrs: void 0,
+                               subnodes: [{ name: 'w3', attrs: void 0, subnodes: [] }]
+                           }]
                        }]
-                   }]
-            };
+                };
 
-            assert.deepEqual(p.exec(s), r);
-        });
-
-        test('SimpleXML', function () {
-            var xmlp = ABNF('node', function (compile) {
-                this.node = compile('open *(node / text) close').map({ tag: 0, nodes: 1 });
-                this.open = compile('"<" name ">"').select(1);
-                this.close = compile('"</" name ">"').select(1);
-                this.name = /[^<>/]+/;
-                this.text = /[^<>/]+/;
-            });
-
-            assert.deepEqual(xmlp.exec('<a><b>123</b><c>456</c></a>'), {
-                tag: 'a', nodes: [
-                    { tag: 'b', nodes: ['123'] },
-                    { tag: 'c', nodes: ['456'] }
-                ]
+                assert.deepEqual(p.exec(s), r);
             });
         });
 
-        test('UTF-8', function () {
-            // this parser reads a string in which every character represents a byte
-            // of a UTF-8 string and returns an array of unicode code-points
-            var p = ABNF('1*char', function (rule) {
-                this.char = rule('chr1 0byte / chr2 1byte / chr3 2byte / chr4 3byte / chr5 4byte').flatten().then(decode);
-                this.byte = dint('%b10000000-10111111', 6);
-                this.chr1 = dint('%b00000000-01111111', 7);
-                this.chr2 = dint('%b11000000-11011111', 5);
-                this.chr3 = dint('%b11100000-11101111', 4);
-                this.chr4 = dint('%b11110000-11110111', 3);
-                this.chr5 = dint('%b11111000-11111011', 2);
+        suite('SimpleXML', function () {
+            var p;
 
-                function dint(abnf, bits) {
-                    var mask = (1 << (bits + 1)) - 1;
-                    return rule(abnf).then(function (r) {
-                        return r.charCodeAt(0) & mask;
-                    });
-                }
-
-                function decode(n) {
-                    return n.length == 1 ? n[0] : n[n.length - 1] + 64 * decode(n.slice(0, -1));
-                }
+            setup(function () {
+                p = ABNF('node', function (compile) {
+                    this.node = compile('open *(node / text) close').map({ tag: 0, nodes: 1 });
+                    this.open = compile('"<" name ">"').select(1);
+                    this.close = compile('"</" name ">"').select(1);
+                    this.name = /[^<>/]+/;
+                    this.text = /[^<>/]+/;
+                });
             });
 
-            assert.deepEqual( // "A<NOT IDENTICAL TO><ALPHA>."
-                p.exec('\x41\xE2\x89\xA2\xCE\x91\x2E'),
-                [0x0041, 0x2262, 0x0391, 0x002E]);
+            test('Invalid', function () {
+                assert.deepEqual(p.exec('<a>ss'), null);
+            });
 
-            assert.deepEqual( // the Hangul characters for the Korean word "hangugo"
-                p.exec('\xED\x95\x9C\xEA\xB5\xAD\xEC\x96\xB4'),
-                [0xD55C, 0xAD6D, 0xC5B4]);
-
-            assert.deepEqual( // the Han characters for the Japanese word "nihongo"
-                p.exec('\xE6\x97\xA5\xE6\x9C\xAC\xE8\xAA\x9E'),
-                [0x65E5, 0x672C, 0x8A9E]);
-
-            assert.deepEqual( // the Cyrillic characters for the Russian phrase "Kak dela?"
-                p.exec('\xD0\x9A\xD0\xB0\xD0\xBA\x20\xD0\xB4\xD0\xB5\xD0\xBB\xD0\xB0\x3F'),
-                [1050, 1072, 1082, 32, 1076, 1077, 1083, 1072, 63]);
+            test('Valid', function () {
+                assert.deepEqual(p.exec('<a><b>123</b><c>456</c></a>'), {
+                    tag: 'a', nodes: [
+                        { tag: 'b', nodes: ['123'] },
+                        { tag: 'c', nodes: ['456'] }
+                    ]
+                });
+            });
         });
 
-        test('UTF-16', function () {
-            // this parser reads a string in which every character represents a word (16 bits)
-            // of a UTF-16 string and returns an array of unicode code-points
-            var p = ABNF('1*(chr1 / chr2)', {
-                chr1: ABNF('%x0000-d7ff / %xe000-ffff').then(function (s) {
-                    return s.charCodeAt(0);
-                }),
-                chr2: ABNF('%xd800-dbff %xdc00-dfff').then(function (_, s) {
-                    var w1 = s.charCodeAt(0) & 1023;
-                    var w2 = s.charCodeAt(1) & 1023;
-                    return 0x10000 + (w1 << 10) + w2;
-                })
+        suite('UTF-8', function () {
+            var p;
+
+            setup(function () {
+                // this parser reads a string in which every character represents a byte
+                // of a UTF-8 string and returns an array of unicode code-points
+                p = ABNF('1*char', function (rule) {
+                    this.char = rule('chr1 0byte / chr2 1byte / chr3 2byte / chr4 3byte / chr5 4byte').flatten().then(decode);
+                    this.byte = dint('%b10000000-10111111', 6);
+                    this.chr1 = dint('%b00000000-01111111', 7);
+                    this.chr2 = dint('%b11000000-11011111', 5);
+                    this.chr3 = dint('%b11100000-11101111', 4);
+                    this.chr4 = dint('%b11110000-11110111', 3);
+                    this.chr5 = dint('%b11111000-11111011', 2);
+
+                    function dint(abnf, bits) {
+                        var mask = (1 << (bits + 1)) - 1;
+                        return rule(abnf).then(function (r) {
+                            return r.charCodeAt(0) & mask;
+                        });
+                    }
+
+                    function decode(n) {
+                        return n.length == 1 ? n[0] : n[n.length - 1] + 64 * decode(n.slice(0, -1));
+                    }
+                });
             });
 
-            assert.deepEqual( // "<THE RA HIEROGLYPH>=Ra"
-                p.exec('\uD808\uDF45\u003D\u0052\u0061'),
-                [0x12345, 61, 82, 97]);
+            test('A<NOT IDENTICAL TO><ALPHA>.', function () {
+                assert.deepEqual(
+                    p.exec('\x41\xE2\x89\xA2\xCE\x91\x2E'),
+                    [0x0041, 0x2262, 0x0391, 0x002E]);
+            });
 
-            assert.deepEqual( // "<MUSICAL SYMBOL G CLEF>"
-                p.exec('\uD834\uDD1E'),
-                [0x1D11E]);
+            test('the Hangul characters for the Korean word "hangugo"', function () {
+                assert.deepEqual(
+                    p.exec('\xED\x95\x9C\xEA\xB5\xAD\xEC\x96\xB4'),
+                    [0xD55C, 0xAD6D, 0xC5B4]);
+            });
 
-            assert.deepEqual( // "<PRIVATE USE CHARACTER-10FFFD (last Unicode code point)>"
-                p.exec('\uDBFF\uDFFD'),
-                [0x10FFFD]);
+            test('the Han characters for the Japanese word "nihongo"', function () {
+                assert.deepEqual(
+                    p.exec('\xE6\x97\xA5\xE6\x9C\xAC\xE8\xAA\x9E'),
+                    [0x65E5, 0x672C, 0x8A9E]);
+            });
 
-            assert.deepEqual(
-                p.exec('How are you?'),
-                [72, 111, 119, 32, 97, 114, 101, 32, 121, 111, 117, 63]);
+            test('the Cyrillic characters for the Russian phrase "Kak dela?"', function () {
+                assert.deepEqual(
+                    p.exec('\xD0\x9A\xD0\xB0\xD0\xBA\x20\xD0\xB4\xD0\xB5\xD0\xBB\xD0\xB0\x3F'),
+                    [1050, 1072, 1082, 32, 1076, 1077, 1083, 1072, 63]);
+            });
+        });
 
-            assert.deepEqual( // the Cyrillic characters for the Russian phrase "Kak dela?"
-                p.exec('\u041a\u0430\u043a\u0020\u0434\u0435\u043b\u0430\u003f'),
-                [1050, 1072, 1082, 32, 1076, 1077, 1083, 1072, 63]);
+        suite('UTF-16', function () {
+            var p;
+
+            setup(function () {
+                // this parser reads a string in which every character represents a word (16 bits)
+                // of a UTF-16 string and returns an array of unicode code-points
+                p = ABNF('1*(chr1 / chr2)', {
+                    chr1: ABNF('%x0000-d7ff / %xe000-ffff').then(function (s) {
+                        return s.charCodeAt(0);
+                    }),
+                    chr2: ABNF('%xd800-dbff %xdc00-dfff').then(function (_, s) {
+                        var w1 = s.charCodeAt(0) & 1023;
+                        var w2 = s.charCodeAt(1) & 1023;
+                        return 0x10000 + (w1 << 10) + w2;
+                    })
+                });
+            });
+
+            test('<THE RA HIEROGLYPH>=Ra', function () {
+                assert.deepEqual(
+                    p.exec('\uD808\uDF45\u003D\u0052\u0061'),
+                    [0x12345, 61, 82, 97]);
+            });
+
+            test('<MUSICAL SYMBOL G CLEF>', function () {
+                assert.deepEqual(
+                    p.exec('\uD834\uDD1E'),
+                    [0x1D11E]);
+            });
+
+            test('<PRIVATE USE CHARACTER-10FFFD (last Unicode code point)>', function () {
+                assert.deepEqual(
+                    p.exec('\uDBFF\uDFFD'),
+                    [0x10FFFD]);
+            });
+
+            test('How are you?', function () {
+                assert.deepEqual(
+                    p.exec('How are you?'),
+                    [72, 111, 119, 32, 97, 114, 101, 32, 121, 111, 117, 63]);
+            });
+
+            test('the Cyrillic characters for the Russian phrase "Kak dela?"', function () {
+                assert.deepEqual(
+                    p.exec('\u041a\u0430\u043a\u0020\u0434\u0435\u043b\u0430\u003f'),
+                    [1050, 1072, 1082, 32, 1076, 1077, 1083, 1072, 63]);
+            });
         });
     });
 });
