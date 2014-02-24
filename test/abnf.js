@@ -631,7 +631,7 @@ suite('ABNF', function () {
 
         ptest('attrs', function ($) {
             this.attrs = $('1*{";"}attr').join('k', 'v');
-            this.attr = $('key "=" val').map({ k: 0, v: 2 });;
+            this.attr = $('key "=" val').map({ k: 0, v: 2 });
             this.key = /\w+/;
             this.val = $(/\d+/).parseInt();
         }, {
@@ -680,7 +680,7 @@ suite('ABNF', function () {
         });
 
         ptest('URI', function () {
-            this.URI = ABNF('[scheme ":"] ["//" [user "@"] host [":" port]] path ["?" query] ["#" hash]', function (rule) {
+            this.URI = ABNF('[scheme ":"] ["//" [user "@"] host [":" port]] path ["?" query] ["#" hash]', function () {
                 this.query = /[^#]*/;
                 this.scheme = /[a-zA-Z][\w+-.]*/;
                 this.host = /[^:/?#]*/;

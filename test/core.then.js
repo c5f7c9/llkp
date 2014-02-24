@@ -4,7 +4,6 @@ var core = require('../core.then');
 var txt = core.txt;
 var rgx = core.rgx;
 var opt = core.opt;
-var exc = core.exc;
 var any = core.any;
 var seq = core.seq;
 var rep = core.rep;

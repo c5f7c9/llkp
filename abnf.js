@@ -45,7 +45,7 @@
     }
 
     function ABNF(definition, rules) {
-        var pattern, refs = {}, name;
+        var refs = {};
 
         function parse(abnf) {
             var r = ABNF.pattern.exec(abnf);
@@ -65,12 +65,12 @@
             if ('ref' in ast) return ref(ast.ref);
         }
 
-        function build(definition) {
+        function build(definition, name) {
             if (definition instanceof RegExp)
                 return rgx(definition);
 
             if (definition instanceof Function)
-                return new Pattern(name, definition);
+                return new Pattern(name || definition, definition);
 
             if (definition instanceof Pattern)
                 return definition;
@@ -84,22 +84,28 @@
             });
         }
 
-        if (!(this instanceof ABNF))
+        function init(self) {
+            var pattern, name;
+
+            if (rules instanceof Function)
+                rules.call(rules = {}, build);
+
+            for (name in rules)
+                refs[name] = build(rules[name], name);
+
+            pattern = build(definition);
+
+            for (name in refs)
+                if (!refs[name])
+                    throw new SyntaxError('Rule is not defined: ' + name);
+
+            Pattern.call(self, pattern + '', pattern.exec);
+        }
+
+        if (this instanceof ABNF)
+            init(this);
+        else
             return new ABNF(definition, rules);
-
-        if (rules instanceof Function)
-            rules.call(rules = {}, build);
-
-        for (name in rules)
-            refs[name] = build(rules[name]);
-
-        pattern = build(definition);
-
-        for (name in refs)
-            if (!refs[name])
-                throw new SyntaxError('Rule is not defined: ' + name);
-
-        Pattern.call(this, pattern + '', pattern.exec);
     }
 
     ABNF.prototype = Pattern.prototype;

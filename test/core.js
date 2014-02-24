@@ -234,7 +234,7 @@ suite('Core', function () {
         var p;
 
         setup(function () {
-            p = any(txt('a'), txt('bb'), txt('ccc'))
+            p = any(txt('a'), txt('bb'), txt('ccc'));
         });
 
         test(1, function () {
@@ -476,7 +476,7 @@ suite('Core', function () {
 
         test('rejected', function () {
             var n = 0;
-            var p = txt('a').then(function (s) { n = 1 });
+            var p = txt('a').then(function () { n = 1 });
             var r = p.exec('b');
 
             assert.equal(r, null);

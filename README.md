@@ -68,6 +68,10 @@ Unit tests were written in the mocha's TDD style:
     npm install -g mocha
     mocha -u tdd
 
+They can be run with npm:
+
+    npm test
+
 ### Code coverage
 
 TBD
@@ -163,7 +167,7 @@ p.exec('1=2;3=4;5=6') == [1, '=', 2, 3, '=', 4, 5, '=', 6];
 
 One of well known ways to describe LL(k) grammars is ABNF. This syntax is used extensively in RFC documents to define the syntax of URI, e-mail, data URL and so on. The syntax of ABNF itself can also be expressed in ABNF and such ABNF of ABNF can be found in RFC 5234.
 
-The ABNF class uses core.thenjs (which uses core.js) to implement a parser of ABNF and build from it a parsing function. The interface of ABNF was designed after the built-in RegExp class. First take a look at the interface of RegExp:
+The ABNF class uses core.then.js (which uses core.js) to implement a parser of ABNF and build from it a parsing function. The interface of ABNF was designed after the built-in RegExp class. First take a look at the interface of RegExp:
 
 ````js
 var pattern = new RegExp('(abc|def)+');
