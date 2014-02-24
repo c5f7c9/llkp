@@ -97,6 +97,22 @@ suite('Core.Then', function () {
         });
     });
 
+    suite('parseFloat', function () {
+        test(1, function () {
+            var p = rgx(/.+/).parseFloat();
+            var r = p.exec('123.456');
+
+            assert.strictEqual(r, 123.456);
+        });
+
+        test(2, function () {
+            var p = rgx(/.+/).parseFloat();
+            var r = p.exec('123');
+
+            assert.strictEqual(r, 123);
+        });
+    });
+
     suite('merge', function () {
         test(1, function () {
             var p = rep(rgx(/\w+/), rgx(/\s+/)).merge();
@@ -155,6 +171,24 @@ suite('Core.Then', function () {
 
             assert.deepEqual(r, [1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
             assert.deepEqual(w, [[[[1, 2, 3], 4, 5, [6, [7], 8], 9], [[1, 2, 3], 4, 5, [6, 7, 8], 9]]]);
+        });
+    });
+
+    suite('trim', function () {
+        test(1, function () {
+            var p = rgx(/.+/).trim();
+            var s = '123';
+            var r = p.exec(s);
+
+            assert.deepEqual(r, '123');
+        });
+
+        test(2, function () {
+            var p = rgx(/.+/).trim();
+            var s = '   123   ';
+            var r = p.exec(s);
+
+            assert.deepEqual(r, '123');
         });
     });
 });

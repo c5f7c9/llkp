@@ -34,9 +34,21 @@
             });
         },
 
+        parseFloat: function () {
+            return this.then(function (r) {
+                return parseFloat(r);
+            });
+        },
+
         merge: function (separator) {
             return this.then(function (r) {
                 return r.join(separator || '');
+            });
+        },
+
+        trim: function () {
+            return this.then(function (r) {
+                return r.trim();
             });
         },
 
