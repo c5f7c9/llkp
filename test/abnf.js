@@ -7,20 +7,21 @@ function forEach(dict, fn) {
 }
 
 function ptest(pattern, samples) {
+    var rules = {
+        'num': ABNF(/\d+/).parseInt(),
+        'var': /[a-zA-Z]\w+/
+    };
+
+    if (arguments.length == 3) {
+        rules = arguments[1];
+        samples = arguments[2];
+    }
+
     forEach(samples, function (expectedResult, input) {
         var testName = 'ABNF(' + pattern + ').exec(' + input + ') = ' + expectedResult;
         test(testName, function () {
-            var abnf = pattern instanceof Function ? pattern() : ABNF(pattern + '', {
-                'num': ABNF(/\d+/).parseInt(),
-                'var': /[a-zA-Z]\w+/
-            });
-            var result = abnf.exec(input);
-            try {
-                assert.deepEqual(result, expectedResult);
-            } catch (e) {
-                console.log(result);
-                throw e;
-            }
+            var result = ABNF(pattern, rules).exec(input);
+            assert.deepEqual(result, expectedResult);
         });
     });
 }
@@ -422,10 +423,8 @@ suite('ABNF', function () {
         });
 
         suite('Various', function () {
-            ptest(function () {
-                return new ABNF('"Q" PLUS "Q" / "W"', {
-                    'PLUS': /\s*\+\s*/
-                });
+            ptest('"Q" PLUS "Q" / "W"', {
+                'PLUS': /\s*\+\s*/
             }, {
                 'W': 'W',
                 'Q + Q': ['Q', ' + ', 'Q'],
@@ -433,11 +432,9 @@ suite('ABNF', function () {
                 'Q': null
             });
 
-            ptest(function () {
-                return new ABNF('?sign 1*digit', {
-                    'sign': '"+" / "-"',
-                    'digit': new ABNF('%x30-39')
-                });
+            ptest('?sign 1*digit', {
+                'sign': '"+" / "-"',
+                'digit': new ABNF('%x30-39')
             }, {
                 '-123': ['-', ['1', '2', '3']],
                 '456': [void 0, ['4', '5', '6']]
@@ -490,8 +487,8 @@ suite('ABNF', function () {
     });
 
     suite('Transforms', function () {
-        ptest(function () {
-            return new ABNF('1*%x30-39').then(function (r) {
+        ptest('num', function () {
+            this.num = new ABNF('1*%x30-39').then(function (r) {
                 return +r.join('');
             });
         }, {
@@ -500,9 +497,9 @@ suite('ABNF', function () {
             'abc': null
         });
 
-        ptest(function () {
-            return new ABNF('1*digit', function (rule) {
-                this.digit = rule('%x30-39').then(function (r) {
+        ptest('num', function () {
+            this.num = ABNF('1*digit', function () {
+                this.digit = ABNF('%x30-39').then(function (r) {
                     return String.fromCharCode('A'.charCodeAt(0) + r.charCodeAt(0) - '0'.charCodeAt(0));
                 });
             }).merge();
@@ -512,10 +509,8 @@ suite('ABNF', function () {
             'abc': null
         });
 
-        ptest(function () {
-            return new ABNF('1*{";"}attr', {
-                attr: new ABNF('token "=" token', { token: /\w+/ }).text(),
-            });
+        ptest('1*{";"}attr', function () {
+            this.attr = new ABNF('token "=" token', { token: /\w+/ }).text();
         }, {
             'a=b;c=d': ['a=b', 'c=d'],
             'q=p': ['q=p'],
@@ -523,20 +518,19 @@ suite('ABNF', function () {
             '': null
         });
 
-        ptest(function () {
-            return new ABNF('?"qqq"').text();
+        ptest('x', function () {
+            this.x = new ABNF('?"qqq"').text();
         }, {
             '': '',
             'qqq': 'qqq'
         });
 
-        ptest(function () {
-            return new ABNF('expr', function (rule) {
-                this.expr = rule('"(" *{sep}(num / name / expr) ")"').select(1);
-                this.num = rule(/\d+/).then(function (r) { return +r });
-                this.name = /[a-zA-Z]+/;
-                this.sep = /\s*,\s*/;
-            }).flatten();
+        ptest('flat', function (rule) {
+            this.flat = rule('expr').flatten();
+            this.expr = rule('"(" *{sep}(num / name / expr) ")"').select(1);
+            this.num = rule(/\d+/).then(function (r) { return +r });
+            this.name = /[a-zA-Z]+/;
+            this.sep = /\s*,\s*/;
         }, {
             '()': [],
             '(1)': [1],
@@ -548,36 +542,34 @@ suite('ABNF', function () {
             '(sin 5)': null
         });
 
-        ptest(function () {
-            return new ABNF('1*%x30-39').as('num');
+        ptest('num', function () {
+            this.num = new ABNF('1*%x30-39').as('num');
         }, {
             '123': { num: ['1', '2', '3'] },
             'qwe': null
         });
 
-        ptest(function () {
-            return new ABNF('*%x30-39').merge();
+        ptest('num', function () {
+            this.num = new ABNF('*%x30-39').merge();
         }, {
             '123': '123',
             '': '',
             'qwe': null
         });
 
-        ptest(function () {
-            return new ABNF('"aaa" ?"bbb" "ccc"').merge();
+        ptest('merge', function () {
+            this.merge = new ABNF('"aaa" ?"bbb" "ccc"').merge();
         }, {
             'aaaccc': 'aaaccc',
             'aaabbbccc': 'aaabbbccc',
             'q': null
         });
 
-        ptest(function () {
-            return new ABNF('1*{";"}attr', {
-                attr: new ABNF('key "=" val', {
-                    key: /\w+/,
-                    val: new ABNF(/\d+/).then(function (r) { return +r })
-                }).map({ k: 0, v: 2 })
-            }).join('k', 'v');
+        ptest('attrs', function ($) {
+            this.attrs = $('1*{";"}attr').join('k', 'v');
+            this.attr = $('key "=" val').map({ k: 0, v: 2 });;
+            this.key = /\w+/;
+            this.val = $(/\d+/).parseInt();
         }, {
             'a=1': { a: 1 },
             'a=1;b=2': { a: 1, b: 2 },
@@ -590,16 +582,16 @@ suite('ABNF', function () {
         });
 
         suite('Select', function () {
-            ptest(function () {
-                return ABNF('1*{" "}(1*%x30-39)').select(1);
+            ptest('x', function () {
+                this.x = ABNF('1*{" "}(1*%x30-39)').select(1);
             }, {
                 '123 456 789': ['4', '5', '6'],
                 '123': void 0,
                 '': null
             });
 
-            ptest(function () {
-                return ABNF('*{";"}num', {
+            ptest('y', function () {
+                this.y = ABNF('*{";"}num', {
                     num: ABNF(/\d+/).parseInt()
                 }).map({ a: 0, b: 1, c: 2 });
             }, {
@@ -611,8 +603,8 @@ suite('ABNF', function () {
     });
 
     suite('Extras', function () {
-        ptest(function () {
-            return ABNF('<"> *(escaped / . ~ <">) <">', {
+        ptest('qstr', function () {
+            this.qstr = ABNF('<"> *(escaped / . ~ <">) <">', {
                 escaped: ABNF('%x5c .').select(1)
             }).select(1).merge();
         }, {
@@ -623,8 +615,8 @@ suite('ABNF', function () {
             '"qqq\\"': null
         });
 
-        ptest(function () {
-            return ABNF('[scheme ":"] ["//" [user "@"] host [":" port]] path ["?" query] ["#" hash]', function (rule) {
+        ptest('URI', function () {
+            this.URI = ABNF('[scheme ":"] ["//" [user "@"] host [":" port]] path ["?" query] ["#" hash]', function (rule) {
                 this.query = /[^#]*/;
                 this.scheme = /[a-zA-Z][\w+-.]*/;
                 this.host = /[^:/?#]*/;
@@ -695,20 +687,18 @@ suite('ABNF', function () {
             }
         });
 
-        ptest(function () {
-            return ABNF('data-url', function (rule) {
-                this['data-url'] = rule('scheme ?wsp ?mime ?wsp attributes ?wsp "," ?wsp data').map({ mime: 2, attrs: 4, data: 8 });
-                this['attributes'] = rule('*attr').join('akey', 'aval');
-                this['attr'] = rule('?wsp ";" ?wsp token ?wsp ?attr-val ?wsp').map({ akey: 3, aval: 5 });
-                this['attr-val'] = rule('"=" ?wsp (token / str)').select(2);
-                this['str'] = rule('<"> *(escaped / . ~ <">) <">').select(1).merge();
-                this['escaped'] = rule('%x5c .').select(1);
-                this['scheme'] = /\s*data\s*:\s*/;
-                this['token'] = /[^=;,"\s]+/;
-                this['wsp'] = /\s+/;
-                this['mime'] = /[-\w]+\/[-\w]+/;
-                this['data'] = rule(/.*/).then(function (s) { return decodeURIComponent(s.replace(/\+/g, '%20')) });
-            });
+        ptest('data-url', function (rule) {
+            this['data-url'] = rule('scheme ?wsp ?mime ?wsp attributes ?wsp "," ?wsp data').map({ mime: 2, attrs: 4, data: 8 });
+            this['attributes'] = rule('*attr').join('akey', 'aval');
+            this['attr'] = rule('?wsp ";" ?wsp token ?wsp ?attr-val ?wsp').map({ akey: 3, aval: 5 });
+            this['attr-val'] = rule('"=" ?wsp (token / str)').select(2);
+            this['str'] = rule('<"> *(escaped / . ~ <">) <">').select(1).merge();
+            this['escaped'] = rule('%x5c .').select(1);
+            this['scheme'] = /\s*data\s*:\s*/;
+            this['token'] = /[^=;,"\s]+/;
+            this['wsp'] = /\s+/;
+            this['mime'] = /[-\w]+\/[-\w]+/;
+            this['data'] = rule(/.*/).then(function (s) { return decodeURIComponent(s.replace(/\+/g, '%20')) });
         }, {
             '': null,
 
@@ -761,8 +751,8 @@ suite('ABNF', function () {
             }
         });
 
-        ptest(function () {
-            return ABNF('www-auth', function (rule) {
+        test('WWW-Authenticate header', function () {
+            var pattern = ABNF('www-auth', function (rule) {
                 this['www-auth'] = rule('*{ch-sep}challenge').join('name', 'attrs');
                 this['challenge'] = rule('name wsp attributes').map({ name: 0, attrs: 2 });
                 this['attributes'] = rule('*{attr-sep}(name eq (name / quoted-str))').join(0, 2);
@@ -774,13 +764,15 @@ suite('ABNF', function () {
                 this['quoted-str'] = rule('<"> *(escaped-char / . ~ <">) <">').select(1).merge();
                 this['escaped-char'] = rule('%x5c .').select(1);
             });
-        }, {
-            'Digest username="Mufasa", realm="testrealm@host.com",nonce="12",uri="/dir/index.html",qop=auth,nc=2,cnonce="3",response="44",opaque="55"Basic realm="testrealm@host.com",nonce="12",uri="/dir/index.html",qop=auth,nc=2,cnonce="3",response="44",opaque="55", NTLM, Negotiate': {
+
+            var input = 'Digest username="Mufasa", realm="testrealm@host.com",nonce="12",uri="/dir/index.html",qop=auth,nc=2,cnonce="3",response="44",opaque="55"Basic realm="testrealm@host.com",nonce="12",uri="/dir/index.html",qop=auth,nc=2,cnonce="3",response="44",opaque="55", NTLM, Negotiate';
+
+            assert.deepEqual(pattern.exec(input), {
                 Digest: { username: 'Mufasa', realm: 'testrealm@host.com', nonce: '12', uri: '/dir/index.html', qop: 'auth', nc: '2', cnonce: '3', response: '44', opaque: '55' },
                 Basic: { realm: 'testrealm@host.com', nonce: '12', uri: '/dir/index.html', qop: 'auth', nc: '2', cnonce: '3', response: '44', opaque: '55' },
                 NTLM: {},
                 Negotiate: {}
-            }
+            });
         });
 
         test('ABNF', function () {
