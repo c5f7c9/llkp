@@ -244,7 +244,7 @@ suite('ABNF', function () {
                 '': void 0,
                 'def': null
             },
-            
+
             '["1" "2"]': {
                 '12': ['1', '2'],
                 '': void 0
@@ -446,6 +446,12 @@ suite('ABNF', function () {
                 'A': 'A',
                 'B': null,
                 'C': null,
+                '': null
+            },
+
+            '<1> ~ <1>': {
+                '1': null,
+                '2': null,
                 '': null
             },
 
@@ -1393,6 +1399,348 @@ suite('ABNF', function () {
                 assert.deepEqual(
                     p.exec('\u041a\u0430\u043a\u0020\u0434\u0435\u043b\u0430\u003f'),
                     [1050, 1072, 1082, 32, 1076, 1077, 1083, 1072, 63]);
+            });
+        });
+
+        suite('Expression', function () {
+            var p;
+
+            function etest(input, ast) {
+                test(input, function () {
+                    assert.deepEqual(p.exec(input), ast);
+                });
+            }
+
+            setup(function () {
+                // This is an LL grammar for arithmetic expressions.
+                // It includes rules to form AST of an expression.
+                p = ABNF('expr', function ($) {
+                    this['expr'] = $('[ADD / SUB] term *((ADD / SUB) term)').then(function (r) {
+                        var i, t = r[1];
+
+                        if (r[0] == '-')
+                            t = { neg: t };
+
+                        for (i = 0; i < r[2].length; i++) {
+                            t = r[2][i][0] == '+' ?
+                                { add: { lhs: t, rhs: r[2][i][1] } } :
+                                { sub: { lhs: t, rhs: r[2][i][1] } };
+                        }
+
+                        return t;
+                    });
+
+                    this['term'] = $('fctr *([MUL / DIV / WSP] fctr)').then(function (r) {
+                        var i, t = r[0];
+
+                        for (i = 0; i < r[1].length; i++) {
+                            t = r[1][i][0] == '/' ?
+                                { div: { lhs: t, rhs: r[1][i][1] } } :
+                                { mul: { lhs: t, rhs: r[1][i][1] } };
+                        }
+
+                        return t;
+                    });
+
+                    this['fctr'] = $('1*{EXP}atom').then(function (r) {
+                        var i, t = r[r.length - 1];
+
+                        for (i = r.length - 2; i >= 0; i--)
+                            t = { exp: { lhs: r[i], rhs: t } };
+
+                        return t;
+                    });
+
+                    this['func'] = $('FNAME [WSP] fctr').then(function (r) {
+                        var t = {};
+                        t[r[0]] = r[2];
+                        return t;
+                    });
+
+                    this['atom'] = $('number / group / func / ref');
+                    this['number'] = $(/\d+(\.\d+)?/).parseFloat().as('num');
+                    this['group'] = $('LPAREN expr RPAREN').select(1);
+                    this['ref'] = $('NAME').as('ref');
+
+                    this['ADD'] = $(/\s*\+\s*/).trim();
+                    this['SUB'] = $(/\s*\-\s*/).trim();
+                    this['MUL'] = $(/\s*\*\s*/).trim();
+                    this['DIV'] = $(/\s*\/\s*/).trim();
+                    this['EXP'] = $(/\s*\^\s*/).trim();
+
+                    this['LPAREN'] = $(/\s*\(\s*/);
+                    this['RPAREN'] = $(/\s*\)\s*/);
+
+                    this['NAME'] = /[a-z]+/i;
+                    this['FNAME'] = /sin|cos|tg|ctg/i;
+                    this['WSP'] = /\s+/;
+                });
+            });
+
+            etest('33', {
+                num: 33
+            });
+
+            etest('12.34', {
+                num: 12.34
+            });
+
+            etest('-33', {
+                neg: { num: 33 }
+            });
+
+            etest('11 + 33', {
+                add: {
+                    lhs: { num: 11 },
+                    rhs: { num: 33 }
+                }
+            });
+
+            etest('11 - 33', {
+                sub: {
+                    lhs: { num: 11 },
+                    rhs: { num: 33 }
+                }
+            });
+
+            etest('11 / 33', {
+                div: {
+                    lhs: { num: 11 },
+                    rhs: { num: 33 }
+                }
+            });
+
+            etest('11 * 33', {
+                mul: {
+                    lhs: { num: 11 },
+                    rhs: { num: 33 }
+                }
+            });
+
+            etest('11 ^ 33', {
+                exp: {
+                    lhs: { num: 11 },
+                    rhs: { num: 33 }
+                }
+            });
+
+            etest('11 + 22 + 33', {
+                add: {
+                    lhs: {
+                        add: {
+                            lhs: { num: 11 },
+                            rhs: { num: 22 }
+                        }
+                    },
+                    rhs: { num: 33 }
+                }
+            });
+
+            etest('11 - 22 - 33', {
+                sub: {
+                    lhs: {
+                        sub: {
+                            lhs: { num: 11 },
+                            rhs: { num: 22 }
+                        }
+                    },
+                    rhs: { num: 33 }
+                }
+            });
+
+            etest('11 * 22 * 33', {
+                mul: {
+                    lhs: {
+                        mul: {
+                            lhs: { num: 11 },
+                            rhs: { num: 22 }
+                        }
+                    },
+                    rhs: { num: 33 }
+                }
+            });
+
+            etest('11 / 22 / 33', {
+                div: {
+                    lhs: {
+                        div: {
+                            lhs: { num: 11 },
+                            rhs: { num: 22 }
+                        }
+                    },
+                    rhs: { num: 33 }
+                }
+            });
+
+            etest('11 ^ 22 ^ 33', {
+                exp: {
+                    lhs: { num: 11 },
+                    rhs: {
+                        exp: {
+                            lhs: { num: 22 },
+                            rhs: { num: 33 }
+                        }
+                    }
+                }
+            });
+
+            etest('11 + 22 * 33', {
+                add: {
+                    lhs: { num: 11 },
+                    rhs: {
+                        mul: {
+                            lhs: { num: 22 },
+                            rhs: { num: 33 }
+                        }
+                    }
+                }
+            });
+
+            etest('11 * 22 ^ 33', {
+                mul: {
+                    lhs: { num: 11 },
+                    rhs: {
+                        exp: {
+                            lhs: { num: 22 },
+                            rhs: { num: 33 }
+                        }
+                    }
+                }
+            });
+
+            etest('(11)', {
+                num: 11
+            });
+
+            etest('(-11)', {
+                neg: { num: 11 }
+            });
+
+            etest('11 + (22 + 33)', {
+                add: {
+                    lhs: { num: 11 },
+                    rhs: {
+                        add: {
+                            lhs: { num: 22 },
+                            rhs: { num: 33 }
+                        }
+                    }
+                }
+            });
+
+            etest('(11 + 22)^(33 - 44)', {
+                exp: {
+                    lhs: {
+                        add: {
+                            lhs: { num: 11 },
+                            rhs: { num: 22 }
+                        }
+                    },
+                    rhs: {
+                        sub: {
+                            lhs: { num: 33 },
+                            rhs: { num: 44 }
+                        }
+                    },
+                }
+            });
+
+            etest('sin 11', {
+                sin: { num: 11 }
+            });
+
+            etest('sin(11)', {
+                sin: { num: 11 }
+            });
+
+            etest('sin 2 + 3', {
+                add: {
+                    lhs: { sin: { num: 2 } },
+                    rhs: { num: 3 }
+                }
+            });
+
+            etest('sin 2 ^ 3', {
+                sin: {
+                    exp: {
+                        lhs: { num: 2 },
+                        rhs: { num: 3 }
+                    }
+                }
+            });
+
+            etest('sin 2 ^ cos 3', {
+                sin: {
+                    exp: {
+                        lhs: { num: 2 },
+                        rhs: { cos: { num: 3 } }
+                    }
+                }
+            });
+
+            etest('pi', {
+                ref: 'pi'
+            });
+
+            etest('pi - 2', {
+                sub: {
+                    lhs: { ref: 'pi' },
+                    rhs: { num: 2 }
+                }
+            });
+
+            etest('sin - 2', {
+                sub: {
+                    lhs: { ref: 'sin' },
+                    rhs: { num: 2 }
+                }
+            });
+
+            etest('sin cos(pi/2)', {
+                sin: {
+                    cos: {
+                        div: {
+                            lhs: { ref: 'pi' },
+                            rhs: { num: 2 }
+                        }
+                    }
+                }
+            });
+
+            etest('4 x', {
+                mul: {
+                    lhs: { num: 4 },
+                    rhs: { ref: 'x' }
+                }
+            });
+
+            etest('2 + 3i', {
+                add: {
+                    lhs: { num: 2 },
+                    rhs: {
+                        mul: {
+                            lhs: { num: 3 },
+                            rhs: { ref: 'i' }
+                        }
+                    }
+                }
+            });
+
+            etest('e^(i pi) + 1', {
+                add: {
+                    lhs: {
+                        exp: {
+                            lhs: { ref: 'e' },
+                            rhs: {
+                                mul: {
+                                    lhs: { ref: 'i' },
+                                    rhs: { ref: 'pi' }
+                                }
+                            }
+                        }
+                    },
+                    rhs: { num: 1 }
+                }
             });
         });
     });
