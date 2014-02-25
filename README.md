@@ -189,10 +189,10 @@ results == ['abc', 'def', 'abc'];
 
 ABNF implements the Pattern interface: it also has the .exec and .then methods, as well as all transformation methods from the Pattern's prototype. In addition to what RFC 5234 specifies, the ABNF class implements a few additional features:
 
-    * Inline regular expressions: (`...`) - matches the given regexp and returns whatever it matched.
-    * Exclusion: (A ~ B) - matches A if the input does not match B.
-    * Single quoted text: ('...') - same as "...".
-    * Angle quoted text: (<...>) - same as "...".
+* Inline regular expressions: (`...`) - matches the given regexp and returns whatever it matched.
+* Exclusion: (A ~ B) - matches A if the input does not match B.
+* Single quoted text: ('...') - same as "...".
+* Angle quoted text: (<...>) - same as "...".
 
 ### Debugging
 
