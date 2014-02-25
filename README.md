@@ -258,14 +258,9 @@ It can be fixed to parse names only:
 
     var ast = pattern.exec(input);
 
-    assert.deepEqual(ast, [
-        "a", "(", [
-        1,
-        2,
-        ["b", "(", [4], ")"],
-        ["c", "(", [], ")"],
-        ["d", "(", [4, 5, 6], ")"], 8],
-        ")"]);
+    assert.deepEqual(ast, ["a", "(", [1, 2,
+        ["b", "(", [4], ")"], ["c", "(", [], ")"],
+        ["d", "(", [4, 5, 6], ")"], 8], ")"]);
 ````
 
 ### The EBNF syntax.

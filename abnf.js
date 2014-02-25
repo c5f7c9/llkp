@@ -17,31 +17,29 @@
     var seq = core.seq;
     var rep = core.rep;
 
-    function numval(prefix, regex, radix) {
+    function numstr(prefix, regex, radix) {
         var num = rgx(regex).parseInt(radix);
-        return any(
-            seq(txt(prefix), num, txt('-'), num).map({ min: 1, max: 3 }),
-            seq(txt(prefix), num).map({ min: 1, max: 1 }));
+        var rng = seq(num, txt('-'), num).map({ min: 0, max: 2 });
+        var chr = any(rng, num.as('num'));
+        return seq(txt(prefix), rep(chr, txt('.'), 1)).select(1);
     }
 
-    function rng(min, max) {
-        var name = '%x' + min.toString(16) + '-' + max.toString(16);
-        return new Pattern(name, function (str, pos) {
-            var c = str.charAt(pos);
-            var n = str.charCodeAt(pos);
-            return n >= min && n <= max ? { res: c, end: pos + 1 } : null;
+    function hs(n) {
+        var s = n.toString(16);
+        return ['', '\\x0', '\\x', '\\u0', '\\u'][s.length] + s;
+    }
+
+    function str(string) {
+        var c = string.map(function (s) {
+            return 'num' in s ? hs(s.num) : hs(s.min) + '-' + hs(s.max);
         });
+
+        return rgx(new RegExp('[' + c.join('][') + ']'));
     }
 
     function quoted(lq, rq) {
         var regexp = new RegExp(lq + '[\\x20-\\x7E]*?' + rq);
         return rgx(regexp).then(function (s) { return s.slice(+1, -1) });
-    }
-
-    function chr() {
-        return new Pattern('.', function (str, pos) {
-            return pos < str.length ? { res: str.charAt(pos), end: pos + 1 } : null;
-        });
     }
 
     function ABNF(definition, rules) {
@@ -58,9 +56,9 @@
             if ('any' in ast) return any.apply(null, ast.any.map(compile));
             if ('rep' in ast) return rep(compile(ast.rep), ast.sep && compile(ast.sep), ast.min, ast.max);
             if ('opt' in ast) return opt(compile(ast.opt));
-            if ('rng' in ast) return rng(ast.rng.min, ast.rng.max);
+            if ('str' in ast) return str(ast.str);
             if ('txt' in ast) return txt(ast.txt);
-            if ('chr' in ast) return chr();
+            if ('chr' in ast) return rgx(/[\u0000-\uffff]/);
             if ('exc' in ast) return exc.apply(null, ast.exc.map(compile));
             if ('ref' in ast) return ref(ast.ref);
         }
@@ -120,9 +118,9 @@
         }
 
         // bin-val = "b" 1*("0" / "1") ["-" 1*("0" / "1")]
-        rules.hexval = numval('x', /[0-9a-fA-F]+/, 16);
-        rules.decval = numval('d', /[0-9]+/, 10);
-        rules.binval = numval('b', /[0-1]+/, 2);
+        rules.hexstr = numstr('x', /[0-9a-f]+/i, 16);
+        rules.decstr = numstr('d', /[0-9]+/, 10);
+        rules.binstr = numstr('b', /[0-1]+/, 2);
 
         // repeat = *digit "*" *digit / 1*digit
         rules.repeat = any(
@@ -157,7 +155,7 @@
             // rule-name = ...
             rgx(/[a-zA-Z][a-zA-Z0-9\-]*/).as('ref'),
             // num-val = "%" (hex-val / dec-val / bin-val)
-            seq(txt('%'), any(ref('hexval'), ref('decval'), ref('binval'))).select(1).as('rng'),
+            seq(txt('%'), any(ref('hexstr'), ref('decstr'), ref('binstr'))).select(1).as('str'),
             // group = "(" alternation ")"
             seq(rgx(/\s*\(\s*/), ref('alternation'), rgx(/\s*\)\s*/)).select(1),
             // option = "[" alternation "]"

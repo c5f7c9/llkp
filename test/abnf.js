@@ -136,7 +136,7 @@ suite('ABNF', function () {
             }
         });
 
-        psuite('Range', {
+        psuite('NumRng', {
             '%x30-39': {
                 '1': '1',
                 '5': '5',
@@ -164,6 +164,61 @@ suite('ABNF', function () {
                 '0': '0',
                 'a': null,
                 '@': null,
+                '': null
+            }
+        });
+
+        psuite('NumStr', {
+            '%x31.32.33': {
+                '123': '123',
+                '456': null,
+                '124': null,
+                '': null
+            },
+
+            '%d49.50.51': {
+                '123': '123',
+                '456': null,
+                '124': null,
+                '': null
+            },
+
+            '%b00110001.00110010.00110011': {
+                '123': '123',
+                '456': null,
+                '124': null,
+                '': null
+            }
+        });
+
+        psuite('NumStrRng', {
+            '%x41-5A.61-7A.30-39': {
+                'Rh8': 'Rh8',
+                'Aa0': 'Aa0',
+                'Zz9': 'Zz9',
+                '@j7': null,
+                'W#8': null,
+                'Ws*': null,
+                '': null
+            },
+
+            '%d65-90.97-122.48-57': {
+                'Rh8': 'Rh8',
+                'Aa0': 'Aa0',
+                'Zz9': 'Zz9',
+                '@j7': null,
+                'W#8': null,
+                'Ws*': null,
+                '': null
+            },
+
+            '%b1000001-1011010.1100001-1111010.110000-111001': {
+                'Rh8': 'Rh8',
+                'Aa0': 'Aa0',
+                'Zz9': 'Zz9',
+                '@j7': null,
+                'W#8': null,
+                'Ws*': null,
                 '': null
             }
         });
@@ -1171,13 +1226,13 @@ suite('ABNF', function () {
                 this['number'] = rule(/\-?\d+(\.\d+)?(e[+-]?\d+)?/).then(function (r, s) { return +s });
                 this['string'] = rule('<"> *char <">').select(1).merge();
                 this['char'] = rule('unescaped / escaped / encoded');
-                this['unescaped'] = rule('%x20-21 / %x23-5b / %x5d-10FFFF');
+                this['unescaped'] = rule('%x20-21 / %x23-5b / %x5d-FF');
                 this['escaped'] = rule('%x5c (<"> / %x5c / "/" / "b" / "f" / "n" / "r" / "t" / "u")').select(1);
                 this['encoded'] = rule(/\\u[a-fA-F0-9]{4}/).then(function (r, s) { return String.fromCharCode(+s.slice(2)) });
             });
 
-            var source = [1, -2.34e-17, "123\r\n\u005c01234", false, true, null, [1, 2], {
-                "a\u1234bc": [],
+            var source = [1, -2.34e-17, "123\r\n\u005c", false, true, null, [1, 2], {
+                "a\x12bc": [],
                 "b": {},
                 "c": [{}, {}]
             }];
