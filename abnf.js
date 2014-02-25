@@ -58,6 +58,7 @@
             if ('opt' in ast) return opt(compile(ast.opt));
             if ('str' in ast) return str(ast.str);
             if ('txt' in ast) return txt(ast.txt);
+            if ('rgx' in ast) return rgx(new RegExp(ast.rgx));
             if ('chr' in ast) return rgx(/[\u0000-\uffff]/);
             if ('exc' in ast) return exc.apply(null, ast.exc.map(compile));
             if ('ref' in ast) return ref(ast.ref);
@@ -117,52 +118,38 @@
             });
         }
 
-        // bin-val = "b" 1*("0" / "1") ["-" 1*("0" / "1")]
         rules.hexstr = numstr('x', /[0-9a-f]+/i, 16);
         rules.decstr = numstr('d', /[0-9]+/, 10);
         rules.binstr = numstr('b', /[0-1]+/, 2);
 
-        // repeat = *digit "*" *digit / 1*digit
         rules.repeat = any(
             seq(rgx(/\d*/), txt('*'), rgx(/\d*/)).then(function (r) { return { min: +r[0] || 0, max: +r[2] || +Infinity } }),
             rgx(/\d+/).then(function (r) { return { min: +r, max: +r } }));
 
-        // repetition = repeat [separator] element / element
         rules.repetition = any(
             seq(ref('repeat'), opt(ref('separator')), ref('element'))
                 .then(function (r) { return { rep: r[2], sep: r[1], min: r[0].min, max: r[0].max } }),
             ref('element'));
 
-        // exclusion = repetition ["~" repetition] ; this is an extension to ABNF
         rules.exclusion = seq(ref('repetition'), opt(seq(rgx(/\s*~\s*/), ref('repetition'))))
             .then(function (r) { return r[1] ? { exc: [r[0], r[1][1]] } : r[0] });
 
-        // concatenation = exclusion *(" " exclusion)
         rules.concatenation = rep(ref('exclusion'), rgx(/\s*/))
             .then(function (r) { return r.length == 1 ? r[0] : { seq: r } });
 
-        // alternation = concatenation *("/" concatenation)
         rules.alternation = rep(ref('concatenation'), rgx(/\s*\/\s*/))
             .then(function (r) { return r.length == 1 ? r[0] : { any: r } });
 
-        // separator = "{" alternation "}" ; this is an extension to ABNF
         rules.separator = seq(rgx(/\s*\{\s*/), ref('alternation'), rgx(/\s*\}\s*/)).select(1);
 
-        // element = char-val / rule-name / num-val / group / option / single-option / single-char
         rules.element = any(
-            // char-val = "..." / '...' / <...> ; last two are extensions to ABNF
             any(quoted('"', '"'), quoted("'", "'"), quoted('<', '>')).as('txt'),
-            // rule-name = ...
+            quoted('`', '`').as('rgx'),
             rgx(/[a-zA-Z][a-zA-Z0-9\-]*/).as('ref'),
-            // num-val = "%" (hex-val / dec-val / bin-val)
             seq(txt('%'), any(ref('hexstr'), ref('decstr'), ref('binstr'))).select(1).as('str'),
-            // group = "(" alternation ")"
             seq(rgx(/\s*\(\s*/), ref('alternation'), rgx(/\s*\)\s*/)).select(1),
-            // option = "[" alternation "]"
             seq(rgx(/\s*\[\s*/), ref('alternation'), rgx(/\s*\]\s*/)).select(1).as('opt'),
-            // single-option = "?" element ; this is an extension to ABNF
             seq(txt('?'), ref('element')).select(1).as('opt'),
-            // single-char = "." ; this is an extension to ABNF
             txt('.').as('chr'));
 
         return ref('alternation');
