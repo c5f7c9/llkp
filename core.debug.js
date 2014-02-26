@@ -13,22 +13,23 @@
     Pattern.prototype.watch = function (alias) {
         var self = this;
         return new Pattern(alias || self + '', function (str, pos) {
-            var i, s, r;
+            var i, s, r, p;
 
             i = new Array(indent).join('|  ');
-            s = '"' + str.slice(pos, 20).replace(/[\x00-\x1f]/gm, function (c) {
-                var n = c.charCodeAt(0);
-                return n < 0x10 ? '\\x0' + n.toString(16) :
-                    n < 0x100 ? '\\x' + n.toString(16) :
-                    n < 0x1000 ? '\\u0' + n.toString(16) :
-                    '\\u' + n.toString(16);
-            }) + '"';
+            s = str.slice(pos, pos + 20);
+            s = (str.length - pos) + '(' + s + ')';
+            s = s.replace(/[^\x20-\x7e]/gm, function (c) {
+                var h = c.charCodeAt(0).toString(16);
+                return ['', '\\x0', '\\x', '\\u0', '\\u'][h.length] + h;
+            });
 
-            console.log(i + self, ':', s);
+            p = i + self + ' :: ' + s;
+
+            console.log(p);
             indent++;
             r = self.exec(str, pos);
             indent--;
-            console.log(i + self, ':', s, '=>', (r ? r.res : 'null'));
+            console.log(p, '=>', (r ? r.res : 'null'));
             return r;
         });
     };

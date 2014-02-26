@@ -760,14 +760,14 @@ suite('ABNF', function () {
         });
 
         ptest('URI', function () {
-            this.URI = ABNF('[scheme ":"] ["//" [user "@"] host [":" port]] path ["?" query] ["#" hash]', function () {
-                this.query = /[^#]*/;
-                this.scheme = /[a-zA-Z][\w+-.]*/;
-                this.host = /[^:/?#]*/;
-                this.path = /[^?#]*/;
-                this.user = /[^@]*/;
-                this.port = /\d*/;
-                this.hash = /.*/;
+            this.URI = ABNF('[scheme ":"] ["//" [user "@"] host [":" port]] path ["?" query] ["#" hash]', {
+                query: /[^#]*/,
+                scheme: /[a-zA-Z][\w+-.]*/,
+                host: /[^:/?#]*/,
+                path: /[^?#]*/,
+                user: /[^@]*/,
+                port: /\d*/,
+                hash: /.*/
             }).then(function (r) {
                 return {
                     scheme: r[0] && r[0][0],
@@ -1241,31 +1241,28 @@ suite('ABNF', function () {
         test('JSON', function () {
             // The ABNF grammar of JSON was taken from RFC 4627.
             var pattern = ABNF('object / array', function (rule) {
-                this['object'] = rule('<{> members <}>').select(1);
-                this['members'] = rule('*{","}(string ":" value)').join(0, 2);
-                this['array'] = rule('<[> *{","}value <]>').select(1);
+                this['object'] = rule('"{" *{","}(string ":" value) "}"').select(1).join(0, 2);
+                this['array'] = rule('"[" *{","}value "]"').select(1);
                 this['value'] = rule('object / array / number / string / false / true / null');
-                this['false'] = rule('<false>').then(function () { return false });
-                this['true'] = rule('<true>').then(function () { return true });
-                this['null'] = rule('<null>').then(function () { return null });
-                this['number'] = rule(/\-?\d+(\.\d+)?(e[+-]?\d+)?/).then(function (r, s) { return +s });
-                this['string'] = rule('<"> *char <">').select(1).merge();
-                this['char'] = rule('unescaped / escaped / encoded');
-                this['unescaped'] = rule('%x20-21 / %x23-5b / %x5d-FF');
-                this['escaped'] = rule('%x5c (<"> / %x5c / "/" / "b" / "f" / "n" / "r" / "t" / "u")').select(1);
-                this['encoded'] = rule(/\\u[a-fA-F0-9]{4}/).then(function (r, s) { return String.fromCharCode(+s.slice(2)) });
+                this['false'] = rule('"false"').then(function () { return false });
+                this['true'] = rule('"true"').then(function () { return true });
+                this['null'] = rule('"null"').then(function () { return null });
+                this['number'] = rule('["-"] `\\d+` ["." `\\d+`] ["e" ["+" / "-"] `\\d+`]').text().parseFloat();
+                this['string'] = rule('%x22 *char %x22').select(1).merge();
+                this['char'] = /[^"]/; // RFC 4627 specifies a more complicated rule for this
             });
 
-            var source = [1, -2.34e-17, "123\r\n\u005c", false, true, null, [1, 2], {
-                "a\x12bc": [],
-                "b": {},
-                "c": [{}, {}]
-            }];
+            var source = {
+                "num": -1.2345e-11,
+                "str": "abc def",
+                "true": true,
+                "false": false,
+                "null": null,
+                "object": { "a": +1, "b": -2, "c": 0 },
+                "array": [{}, { "x": "y" }, "21", 23.22, [], "", null, true, false]
+            };
 
-            var string = JSON.stringify(source);
-            var parsed = pattern.exec(string);
-
-            assert(parsed);
+            assert.deepEqual(pattern.exec(JSON.stringify(source)), source);
         });
 
         suite('XML', function () {

@@ -189,10 +189,19 @@ results == ['abc', 'def', 'abc'];
 
 ABNF implements the Pattern interface: it also has the .exec and .then methods, as well as all transformation methods from the Pattern's prototype. In addition to what RFC 5234 specifies, the ABNF class implements a few additional features:
 
-* Inline regular expressions: (`...`) - matches the given regexp and returns whatever it matched.
+* Inline regular expressions enclosed in single backward quotes: (`...`).
 * Exclusion: (A ~ B) - matches A if the input does not match B.
+* Separated repetition: 2*5{","}number - matches a comma separated list of numbers and returns the array of numbers.
 * Single quoted text: ('...') - same as "...".
 * Angle quoted text: (<...>) - same as "...".
+
+### The EBNF syntax.
+
+TBD
+
+### The PEG syntax.
+
+TBD
 
 ### Debugging
 
@@ -217,7 +226,7 @@ Debugging API becomes available after including core.debug.js - it extends Patte
 To find the cause of this some parsing functions may be watched:
 
 ````js
-    require("llkp/core.debug");
+    require("llkp/core.debug"); // installs Pattern.prototype.watch
 
     var pattern = ABNF('expr', function ($) {
         this.expr = $('name "(" *{sep}arg ")"').watch('expr');
@@ -267,14 +276,6 @@ It can be fixed to parse names only:
         ["b", "(", [4], ")"], ["c", "(", [], ")"],
         ["d", "(", [4, 5, 6], ")"], 8], ")"]);
 ````
-
-### The EBNF syntax.
-
-TBD
-
-### The PEG syntax.
-
-TBD
 
 ### License
 
