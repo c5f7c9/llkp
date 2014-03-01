@@ -774,7 +774,7 @@ suite('ABNF', function () {
         });
     });
 
-    suite('Extras', function () {
+    suite('PracticalApplications', function () {
         ptest('qstr', function () {
             this.qstr = ABNF('<"> *(escaped / . ~ <">) <">', {
                 escaped: ABNF('%x5c .').select(1)
@@ -860,9 +860,9 @@ suite('ABNF', function () {
         });
 
         ptest('data-url', function (rule) {
-            this['data-url'] = rule('scheme ?wsp mime:?mime ?wsp attrs:attributes ?wsp "," ?wsp data:data');
+            this['data-url'] = 'scheme ?wsp mime:?mime ?wsp attrs:attributes ?wsp "," ?wsp data:data';
             this['attributes'] = rule('*attr').join('akey', 'aval');
-            this['attr'] = rule('?wsp ";" ?wsp akey:token ?wsp aval:?attr-val ?wsp');
+            this['attr'] = '?wsp ";" ?wsp akey:token ?wsp aval:?attr-val ?wsp';
             this['attr-val'] = rule('"=" ?wsp (token / str)').select(2);
             this['str'] = rule('<"> *(escaped / . ~ <">) <">').select(1).merge();
             this['escaped'] = rule('%x5c .').select(1);
@@ -926,7 +926,7 @@ suite('ABNF', function () {
         test('WWW-Authenticate header', function () {
             var pattern = ABNF('www-auth', function (rule) {
                 this['www-auth'] = rule('*{ch-sep}challenge').join('name', 'attrs');
-                this['challenge'] = rule('name:name wsp attrs:attributes');
+                this['challenge'] = 'name:name wsp attrs:attributes';
                 this['attributes'] = rule('*{attr-sep}(name eq (name / quoted-str))').join(0, 2);
                 this['name'] = /[^,;="'\s]+/;
                 this['ch-sep'] = /[,\s]*/;
@@ -991,17 +991,17 @@ suite('ABNF', function () {
             // this is the parser
             var p = ABNF('ABNF', function (rule) {
                 this['ABNF'] = rule('1*{%x0a}rule-def').join('name', 'def');
-                this['rule-def'] = rule('name:rule-name *wsp "=" *wsp def:alternation');
+                this['rule-def'] = 'name:rule-name *wsp "=" *wsp def:alternation';
                 this['rule-name'] = /[a-zA-Z][\w-]*\w/;
                 this['alternation'] = rule('1*{*wsp "/" *wsp}concatenation').then(function (r) { return r.length > 1 ? { alt: r } : r[0] });
                 this['concatenation'] = rule('1*{1*wsp}(repetition / element)').then(function (r) { return r.length > 1 ? { con: r } : r[0] });
                 this['repetition'] = rule('repeat *wsp element').then(function (r) { return { min: r[0].min, max: r[0].max, rep: r[2] } });
-                this['repeat'] = rule('min-max / exact');
-                this['min-max'] = rule('min:?number "*" max:?number');
+                this['repeat'] = 'min-max / exact';
+                this['min-max'] = 'min:?number "*" max:?number';
                 this['exact'] = rule('number').map({ min: 0, max: 0 });
                 this['number'] = rule(/\d+/).parseInt(10);
-                this['element'] = rule('rule-ref / group / option / char-val / num-val');
-                this['rule-ref'] = rule('ref:rule-name');
+                this['element'] = 'rule-ref / group / option / char-val / num-val';
+                this['rule-ref'] = 'ref:rule-name';
                 this['group'] = rule('"(" *wsp alternation *wsp ")"').select(2);
                 this['option'] = rule('"[" *wsp alternation *wsp "]"').select(2).as('opt');
                 this['char-val'] = rule('<"> *(%x20-21 / %x23-7e) <">').select(1).merge().as('str');
@@ -1012,7 +1012,7 @@ suite('ABNF', function () {
                 this['bin-num'] = rule(/[0-1]+/).parseInt(2);
                 this['dec-num'] = rule(/[0-9]+/).parseInt(10);
                 this['hex-num'] = rule(/[0-9a-fA-F]+/).parseInt(16);
-                this['wsp'] = rule('%x20');
+                this['wsp'] = '%x20';
             });
 
             // this is an AST that the parser is expected to produce
@@ -1271,7 +1271,7 @@ suite('ABNF', function () {
             var pattern = ABNF('object / array', function (rule) {
                 this['object'] = rule('"{" *{","}(string ":" value) "}"').select(1).join(0, 2);
                 this['array'] = rule('"[" *{","}value "]"').select(1);
-                this['value'] = rule('object / array / number / string / false / true / null');
+                this['value'] = 'object / array / number / string / false / true / null';
                 this['false'] = rule('"false"').then(function () { return false });
                 this['true'] = rule('"true"').then(function () { return true });
                 this['null'] = rule('"null"').then(function () { return null });
@@ -1299,8 +1299,8 @@ suite('ABNF', function () {
             setup(function () {
                 // this is a simplified grammar of XML:
                 p = ABNF('node', function (rule) {
-                    this['node'] = rule('normal-node / empty-node');
-                    this['empty-node'] = rule('"<" name:name ?wsp attrs:?attrs "/>"');
+                    this['node'] = 'normal-node / empty-node';
+                    this['empty-node'] = '"<" name:name ?wsp attrs:?attrs "/>"';
 
                     this['normal-node'] = rule('"<" open:name ?wsp attrs:?attrs ">" nodes:*(node / text) "</" close:name ">"')
                         .then(function (r) {
@@ -1311,7 +1311,7 @@ suite('ABNF', function () {
 
                     this['attrs'] = rule('1*{wsp}attr').join('name', 'value');
                     this['value'] = rule('"=" str').select(1);
-                    this['attr'] = rule('name:name value:?value');
+                    this['attr'] = 'name:name value:?value';
                     this['str'] = rule('<"> *(escaped / . ~ <">) <">').select(1).merge();
                     this['escaped'] = rule('%x5c .').select(1);
                     this['text'] = /[^<>]+/;
@@ -1384,12 +1384,10 @@ suite('ABNF', function () {
             var p;
 
             setup(function () {
-                p = ABNF('node', function (compile) {
-                    this.node = compile('tag:open nodes:*(node / text) close');
-                    this.open = compile('"<" name ">"').select(1);
-                    this.close = compile('"</" name ">"').select(1);
-                    this.name = /[^<>/]+/;
-                    this.text = /[^<>/]+/;
+                p = ABNF('node', {
+                    node: '"<" tag:name ">" nodes:*(node / text) "</" name ">"',
+                    name: /[^<>/]+/,
+                    text: /[^<>/]+/
                 });
             });
 
