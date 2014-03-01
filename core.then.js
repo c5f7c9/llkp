@@ -1,5 +1,6 @@
 // A set of predefined transforms for Pattern.
 // Extends Pattern.prototype.
+// Depends on `core` module.
 
 (function () {
     'use strict';

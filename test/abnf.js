@@ -1273,12 +1273,13 @@ suite('ABNF', function () {
                 p = ABNF('node', function (rule) {
                     this['node'] = rule('normal-node / empty-node');
                     this['empty-node'] = rule('"<" name ?wsp ?attrs "/>"').map({ name: 1, attrs: 3 });
-                    this['normal-node'] = rule('"<" name ?wsp ?attrs ">" *(node / text) "</" name ">"')
-                        .then(function (r) {
-                            if (r[1] == r[7]) return r;
+
+                    this['normal-node'] = rule('"<" name ?wsp ?attrs ">" *(node / text) "</" name ">"').then(function (r) {
+                        if (r[1] != r[7])
                             throw new SyntaxError('Invalid XML: ' + r[7] + ' does not match ' + r[1]);
-                        })
-                        .map({ name: 1, attrs: 3, subnodes: 5 });
+                        return { name: r[1], attrs: r[3], subnodes: r[5] };
+                    });
+
                     this['attrs'] = rule('1*{wsp}attr').join('name', 'value');
                     this['value'] = rule('"=" str').select(1);
                     this['attr'] = rule('name ?value').map({ name: 0, value: 1 });

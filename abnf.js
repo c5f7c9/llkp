@@ -1,5 +1,6 @@
 // ABNF (RFC 5234) syntax of LL(k) grammars.
 // Exports LLKP.ABNF class.
+// Depends on `core.then` module.
 
 (function () {
     'use strict';

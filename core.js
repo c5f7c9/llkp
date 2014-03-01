@@ -1,5 +1,6 @@
 // LL(k) core parsing functions and combinators.
 // Exports LLKP.Core namespace.
+// Does not depend on other modules.
 
 (function () {
     'use strict';
