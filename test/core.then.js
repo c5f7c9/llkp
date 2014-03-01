@@ -192,4 +192,22 @@ suite('Core.Then', function () {
             assert.deepEqual(r, '123');
         });
     });
+
+    suite('slice', function () {
+        test(1, function () {
+            var p = rgx(/\d+/).slice(1, 5);
+            var s = '0123456789';
+            var r = p.exec(s);
+
+            assert.equal(r, '1234');
+        });
+
+        test(2, function () {
+            var p = rgx(/\d+/).slice(+1, -1);
+            var s = '0123456789';
+            var r = p.exec(s);
+
+            assert.equal(r, '12345678');
+        });
+    });
 });

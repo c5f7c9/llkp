@@ -2,7 +2,7 @@
 // Exports LLKP.ABNF class.
 // Depends on `core.then` module.
 
-(function () {
+!function () {
     'use strict';
 
     var core = typeof window != typeof void 0 ?
@@ -53,7 +53,7 @@
         }
 
         function compile(ast) {
-            if ('seq' in ast) return seq.apply(null, ast.seq.map(compile));
+            if ('seq' in ast) return buildseq(ast);
             if ('any' in ast) return any.apply(null, ast.any.map(compile));
             if ('rep' in ast) return rep(compile(ast.rep), ast.sep && compile(ast.sep), ast.min, ast.max);
             if ('opt' in ast) return opt(compile(ast.opt));
@@ -76,6 +76,12 @@
                 return definition;
 
             return compile(parse(definition + ''));
+        }
+
+        function buildseq(ast) {
+            var p = seq.apply(null, ast.seq.map(compile));
+            var m = ast.map;
+            return !m ? p : p.map(m);
         }
 
         function ref(name) {
@@ -110,7 +116,7 @@
 
     ABNF.prototype = Pattern.prototype;
 
-    ABNF.pattern = function () {
+    ABNF.pattern = (function () {
         var rules = {};
 
         function ref(name) {
@@ -123,42 +129,56 @@
         rules.decstr = numstr('d', /[0-9]+/, 10);
         rules.binstr = numstr('b', /[0-1]+/, 2);
 
-        rules.repeat = any(
+        rules.quantifier = any(
             seq(rgx(/\d*/), txt('*'), rgx(/\d*/)).then(function (r) { return { min: +r[0] || 0, max: +r[2] || +Infinity } }),
             rgx(/\d+/).then(function (r) { return { min: +r, max: +r } }));
 
-        rules.repetition = any(
-            seq(ref('repeat'), opt(ref('separator')), ref('element'))
+        rules.rep = any(
+            seq(ref('quantifier'), opt(ref('sep')), ref('element'))
                 .then(function (r) { return { rep: r[2], sep: r[1], min: r[0].min, max: r[0].max } }),
             ref('element'));
 
-        rules.exclusion = seq(ref('repetition'), opt(seq(rgx(/\s*~\s*/), ref('repetition'))))
+        rules.exc = seq(ref('rep'), opt(seq(rgx(/\s*~\s*/), ref('rep'))))
             .then(function (r) { return r[1] ? { exc: [r[0], r[1][1]] } : r[0] });
 
-        rules.concatenation = rep(ref('exclusion'), rgx(/\s*/))
-            .then(function (r) { return r.length == 1 ? r[0] : { seq: r } });
+        rules.lbl = rgx(/[a-z][a-z0-9_]*:/i).slice(0, -1);
 
-        rules.alternation = rep(ref('concatenation'), rgx(/\s*\/\s*/))
+        rules.seq = rep(seq(opt(ref('lbl')), ref('exc')), rgx(/\s*/))
+            .then(function (r) {
+                var i, m, s = [];
+
+                for (i = 0; i < r.length; i++) {
+                    s.push(r[i][1]);
+                    if (r[i][0]) {
+                        m = m || {};
+                        m[r[i][0]] = i;
+                    }
+                }
+
+                return s.length == 1 && !m ? s[0] : { seq: s, map: m };
+            });
+
+        rules.any = rep(ref('seq'), rgx(/\s*\/\s*/))
             .then(function (r) { return r.length == 1 ? r[0] : { any: r } });
 
-        rules.separator = seq(rgx(/\s*\{\s*/), ref('alternation'), rgx(/\s*\}\s*/)).select(1);
+        rules.sep = seq(rgx(/\s*\{\s*/), ref('any'), rgx(/\s*\}\s*/)).select(1);
 
         rules.element = any(
             any(quoted('"', '"'), quoted("'", "'"), quoted('<', '>')).as('txt'),
             quoted('`', '`').as('rgx'),
             rgx(/[a-zA-Z][a-zA-Z0-9\-]*/).as('ref'),
             seq(txt('%'), any(ref('hexstr'), ref('decstr'), ref('binstr'))).select(1).as('str'),
-            seq(rgx(/\s*\(\s*/), ref('alternation'), rgx(/\s*\)\s*/)).select(1),
-            seq(rgx(/\s*\[\s*/), ref('alternation'), rgx(/\s*\]\s*/)).select(1).as('opt'),
+            seq(rgx(/\s*\(\s*/), ref('any'), rgx(/\s*\)\s*/)).select(1),
+            seq(rgx(/\s*\[\s*/), ref('any'), rgx(/\s*\]\s*/)).select(1).as('opt'),
             seq(txt('?'), ref('element')).select(1).as('opt'),
             txt('.').as('chr'));
 
-        return ref('alternation');
-    }();
+        return ref('any');
+    })();
 
     if (typeof module != typeof void 0) // for Node
         module.exports = ABNF;
 
     if (typeof window != typeof void 0) // for browsers
         window.LLKP.ABNF = ABNF;
-})();
+}(); // jshint ignore:line

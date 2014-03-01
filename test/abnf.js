@@ -383,6 +383,34 @@ suite('ABNF', function () {
             }
         });
 
+        psuite('LabeledSequence', {
+            'abc:`\\d+`': {
+                '123': { abc: 123 },
+                'abc': null
+            },
+
+            'w:`[a-z]+` "=" v:`[a-z0-9]+`': {
+                'charset=utf8': { w: 'charset', v: 'utf8' },
+                'charset = utf8': null
+            },
+
+            'w2:`[0-9]+` ";" w_12:`[0-9]+`': {
+                '123;456': { w2: 123, w_12: 456 },
+                ';': null
+            },
+
+            '*{";"}(key:`[a-z]+` "=" val:`[0-9]+`)': {
+                'abc=123;def=456;ghi=789': [{ key: 'abc', val: 123 }, { key: 'def', val: 456 }, { key: 'ghi', val: 789 }],
+                '': []
+            },
+
+            'num:`[0-9]+` / var:`[a-z]+`': {
+                '123': { num: 123 },
+                'abc': { 'var': 'abc' },
+                'ab_23': null
+            }
+        });
+
         psuite('Alternation', {
             '1*{" "}("abc" / <def> / \'ghi\')': {
                 'abc ghi def': ['abc', 'ghi', 'def'],
@@ -832,9 +860,9 @@ suite('ABNF', function () {
         });
 
         ptest('data-url', function (rule) {
-            this['data-url'] = rule('scheme ?wsp ?mime ?wsp attributes ?wsp "," ?wsp data').map({ mime: 2, attrs: 4, data: 8 });
+            this['data-url'] = rule('scheme ?wsp mime:?mime ?wsp attrs:attributes ?wsp "," ?wsp data:data');
             this['attributes'] = rule('*attr').join('akey', 'aval');
-            this['attr'] = rule('?wsp ";" ?wsp token ?wsp ?attr-val ?wsp').map({ akey: 3, aval: 5 });
+            this['attr'] = rule('?wsp ";" ?wsp akey:token ?wsp aval:?attr-val ?wsp');
             this['attr-val'] = rule('"=" ?wsp (token / str)').select(2);
             this['str'] = rule('<"> *(escaped / . ~ <">) <">').select(1).merge();
             this['escaped'] = rule('%x5c .').select(1);
@@ -898,7 +926,7 @@ suite('ABNF', function () {
         test('WWW-Authenticate header', function () {
             var pattern = ABNF('www-auth', function (rule) {
                 this['www-auth'] = rule('*{ch-sep}challenge').join('name', 'attrs');
-                this['challenge'] = rule('name wsp attributes').map({ name: 0, attrs: 2 });
+                this['challenge'] = rule('name:name wsp attrs:attributes');
                 this['attributes'] = rule('*{attr-sep}(name eq (name / quoted-str))').join(0, 2);
                 this['name'] = /[^,;="'\s]+/;
                 this['ch-sep'] = /[,\s]*/;
@@ -963,17 +991,17 @@ suite('ABNF', function () {
             // this is the parser
             var p = ABNF('ABNF', function (rule) {
                 this['ABNF'] = rule('1*{%x0a}rule-def').join('name', 'def');
-                this['rule-def'] = rule('rule-name *wsp "=" *wsp alternation').map({ name: 0, def: 4 });
+                this['rule-def'] = rule('name:rule-name *wsp "=" *wsp def:alternation');
                 this['rule-name'] = /[a-zA-Z][\w-]*\w/;
                 this['alternation'] = rule('1*{*wsp "/" *wsp}concatenation').then(function (r) { return r.length > 1 ? { alt: r } : r[0] });
                 this['concatenation'] = rule('1*{1*wsp}(repetition / element)').then(function (r) { return r.length > 1 ? { con: r } : r[0] });
                 this['repetition'] = rule('repeat *wsp element').then(function (r) { return { min: r[0].min, max: r[0].max, rep: r[2] } });
                 this['repeat'] = rule('min-max / exact');
-                this['min-max'] = rule('?number "*" ?number').map({ min: 0, max: 2 });
+                this['min-max'] = rule('min:?number "*" max:?number');
                 this['exact'] = rule('number').map({ min: 0, max: 0 });
                 this['number'] = rule(/\d+/).parseInt(10);
                 this['element'] = rule('rule-ref / group / option / char-val / num-val');
-                this['rule-ref'] = rule('rule-name').as('ref');
+                this['rule-ref'] = rule('ref:rule-name');
                 this['group'] = rule('"(" *wsp alternation *wsp ")"').select(2);
                 this['option'] = rule('"[" *wsp alternation *wsp "]"').select(2).as('opt');
                 this['char-val'] = rule('<"> *(%x20-21 / %x23-7e) <">').select(1).merge().as('str');
@@ -1225,7 +1253,7 @@ suite('ABNF', function () {
                 var pattern = ABNF('1*{","}pair', function (rule) {
                     this['name'] = /[a-zA-Z][a-zA-Z0-9\-]+/;
                     this['value'] = /[\w\-]+/;
-                    this['pair'] = rule('name "=" value').map({ name: 0, value: 2 });
+                    this['pair'] = rule('name:name "=" value:value');
                 });
 
                 var results = pattern.exec('charset=utf-8,tag=123,doc-type=html');
@@ -1272,17 +1300,18 @@ suite('ABNF', function () {
                 // this is a simplified grammar of XML:
                 p = ABNF('node', function (rule) {
                     this['node'] = rule('normal-node / empty-node');
-                    this['empty-node'] = rule('"<" name ?wsp ?attrs "/>"').map({ name: 1, attrs: 3 });
+                    this['empty-node'] = rule('"<" name:name ?wsp attrs:?attrs "/>"');
 
-                    this['normal-node'] = rule('"<" name ?wsp ?attrs ">" *(node / text) "</" name ">"').then(function (r) {
-                        if (r[1] != r[7])
-                            throw new SyntaxError('Invalid XML: ' + r[7] + ' does not match ' + r[1]);
-                        return { name: r[1], attrs: r[3], subnodes: r[5] };
-                    });
+                    this['normal-node'] = rule('"<" open:name ?wsp attrs:?attrs ">" nodes:*(node / text) "</" close:name ">"')
+                        .then(function (r) {
+                            if (r.open != r.close)
+                                throw new SyntaxError('Invalid XML: ' + r.close + ' does not match ' + r.open);
+                            return { name: r.open, attrs: r.attrs, subnodes: r.nodes };
+                        });
 
                     this['attrs'] = rule('1*{wsp}attr').join('name', 'value');
                     this['value'] = rule('"=" str').select(1);
-                    this['attr'] = rule('name ?value').map({ name: 0, value: 1 });
+                    this['attr'] = rule('name:name value:?value');
                     this['str'] = rule('<"> *(escaped / . ~ <">) <">').select(1).merge();
                     this['escaped'] = rule('%x5c .').select(1);
                     this['text'] = /[^<>]+/;
@@ -1356,7 +1385,7 @@ suite('ABNF', function () {
 
             setup(function () {
                 p = ABNF('node', function (compile) {
-                    this.node = compile('open *(node / text) close').map({ tag: 0, nodes: 1 });
+                    this.node = compile('tag:open nodes:*(node / text) close');
                     this.open = compile('"<" name ">"').select(1);
                     this.close = compile('"</" name ">"').select(1);
                     this.name = /[^<>/]+/;

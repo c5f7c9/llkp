@@ -2,7 +2,7 @@
 // Extends Pattern.prototype.
 // Depends on `core` module.
 
-(function () {
+!function () {
     'use strict';
 
     var prototype = typeof window != typeof void 0 ?
@@ -56,6 +56,12 @@
         });
     };
 
+    prototype.slice = function (start, end) {
+        return this.then(function (r) {
+            return r.slice(start, end);
+        });
+    };
+
     prototype.text = function () {
         return this.then(function (r, s) {
             return s;
@@ -86,4 +92,4 @@
             return flatten(r);
         });
     };
-})();
+}(); // jshint ignore:line
