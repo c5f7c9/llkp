@@ -1,6 +1,7 @@
 ## llkp - LL(k) parsers
 
 [![Build Status](https://travis-ci.org/c5f7c9/llkp.png)](https://travis-ci.org/c5f7c9/llkp)
+[![Coverage Status](https://coveralls.io/repos/c5f7c9/llkp/badge.png)](https://coveralls.io/r/c5f7c9/llkp)
 
 The goal of this library is to provide API that would look like the built-in RegExp class and would let easily write parsers for structures that cannot be parsed with regular expressions, such as XML-like structures, the e-mail pattern defined in RFC 822, the data URL pattern and so on.
 
