@@ -193,7 +193,6 @@ ABNF implements the Pattern interface: it also has the .exec and .then methods, 
 * Exclusion: (A ~ B) - matches A if the input does not match B.
 * Separated repetition: 2*5{","}number - matches a comma separated list of numbers and returns the array of numbers.
 * Single quoted text: ('...') - same as "...".
-* Angle quoted text: (<...>) - same as "...".
 * Labeled patterns: label1:expr1 - matches expr1 and returns an object with key "label1"
 
 ### The EBNF syntax.

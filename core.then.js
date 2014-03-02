@@ -6,8 +6,8 @@
     'use strict';
 
     var prototype = typeof window != typeof void 0 ?
-        window.LLKP.Pattern.prototype :
-        require('./core').Pattern.prototype;
+        window.LLKP.Pattern.prototype : // for browsers
+        require('./core').Pattern.prototype; // for Node
 
     prototype.select = function (index) {
         return this.then(function (r) {

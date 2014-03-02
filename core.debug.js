@@ -5,8 +5,8 @@
     'use strict';
 
     var Pattern = typeof window != typeof void 0 ?
-        window.LLKP.Core.Pattern :
-        require('./core').Pattern;
+        window.LLKP.Core.Pattern : // for browsers
+        require('./core').Pattern; // for Node
 
     var indent = 1;
 
