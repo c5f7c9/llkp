@@ -440,6 +440,22 @@ suite('ABNF', function () {
             }
         });
 
+        psuite('JoinedRepetition', {
+            '*{";"}<0: 2>(`[a-z]+` "=" `[0-9]+`)': {
+                '': {},
+                'a=1;bc=23;def=456': { a: 1, bc: 23, def: 456 },
+                'a=1;b': null
+            },
+
+            '*{";"}<key: val>(key:`[a-z]+` val:["=" `[0-9]+`].1)': {
+                '': {},
+                'a=1;bc=23;def=456': { a: 1, bc: 23, def: 456 },
+                'a=1;bc;def=456': { a: 1, bc: void 0, def: 456 },
+                'a': { a: void 0 },
+                '123=': null
+            },
+        });
+
         psuite('Alternation', {
             '1*{" "}("abc" / <def> / \'ghi\')': {
                 'abc ghi def': ['abc', 'ghi', 'def'],
@@ -888,8 +904,7 @@ suite('ABNF', function () {
 
         ptest('data-url', function (rule) {
             this['data-url'] = 'scheme ?wsp mime:?mime ?wsp attrs:attributes ?wsp "," ?wsp data:data';
-            this['attributes'] = rule('*attr').join('akey', 'aval');
-            this['attr'] = '?wsp ";" ?wsp akey:token ?wsp aval:["=" ?wsp (token / str)].2 ?wsp';
+            this['attributes'] = '*<akey:aval>(?wsp ";" ?wsp akey:token ?wsp aval:["=" ?wsp v:(token / str)].v ?wsp)';
             this['str'] = rule('<"> *((%x5c .).1 / . ~ <">) <">').select(1).merge();
             this['scheme'] = /\s*data\s*:\s*/;
             this['token'] = /[^=;,"\s]+/;
@@ -949,10 +964,8 @@ suite('ABNF', function () {
         });
 
         test('WWW-Authenticate header', function () {
-            var pattern = ABNF('www-auth', function (rule) {
-                this['www-auth'] = rule('*{ch-sep}challenge').join('name', 'attrs');
-                this['challenge'] = 'name:name wsp attrs:attributes';
-                this['attributes'] = rule('*{attr-sep}(key:name eq val:(name / quoted-str))').join('key', 'val');
+            var pattern = ABNF('*{ch-sep}<name: attrs>(name:name wsp attrs:attributes)', function (rule) {
+                this['attributes'] = '*{attr-sep}<key: val>(key:name eq val:(name / quoted-str))';
                 this['name'] = /[^,;="'\s]+/;
                 this['ch-sep'] = /[,\s]*/;
                 this['attr-sep'] = /\s*,\s*/;
@@ -1013,8 +1026,7 @@ suite('ABNF', function () {
                 'WSP            =  SP / HTAB';
 
             // this is the parser
-            var p = ABNF('ABNF', function (rule) {
-                this['ABNF'] = rule('1*{%x0a}(name:rule-name *wsp "=" *wsp def:alternation)').join('name', 'def');
+            var p = ABNF('1*{%x0a}<name: def>(name:rule-name *wsp "=" *wsp def:alternation)', function (rule) {
                 this['rule-name'] = /[a-zA-Z][\w-]*\w/;
                 this['alternation'] = rule('1*{*wsp "/" *wsp}concatenation').then(function (r) { return r.length > 1 ? { alt: r } : r[0] });
                 this['concatenation'] = rule('1*{1*wsp}(repetition / element)').then(function (r) { return r.length > 1 ? { con: r } : r[0] });
@@ -1292,14 +1304,14 @@ suite('ABNF', function () {
         test('JSON', function () {
             // The ABNF grammar of JSON was taken from RFC 4627.
             var pattern = ABNF('object / array', function (rule) {
-                this['object'] = rule('"{" *{","}(s:string ":" v:value) "}"').select(1).join('s', 'v');
-                this['array'] = '("[" *{","}value "]").1';
+                this['object'] = '("{" obj:*{","}<s:v>(s:string ":" v:value) "}").obj';
+                this['array'] = '("[" a:*{","}value "]").a';
                 this['value'] = 'object / array / number / string / false / true / null';
                 this['false'] = rule('"false"').then(function () { return false });
                 this['true'] = rule('"true"').then(function () { return true });
                 this['null'] = rule('"null"').then(function () { return null });
                 this['number'] = rule('["-"] `\\d+` ["." `\\d+`] ["e" ["+" / "-"] `\\d+`]').text().parseFloat();
-                this['string'] = rule('%x22 *char %x22').select(1).merge();
+                this['string'] = rule('%x22 s:*char %x22').select('s').merge();
                 this['char'] = /[^"]/; // RFC 4627 specifies a more complicated rule for this
             });
 
@@ -1332,7 +1344,7 @@ suite('ABNF', function () {
                             return { name: r.open, attrs: r.attrs, subnodes: r.nodes };
                         });
 
-                    this['attrs'] = rule('1*{wsp}(name ["=" str].1)').join(0, 1);
+                    this['attrs'] = '1*{wsp}<0:1>(name ["=" str].1)';
                     this['str'] = rule('<"> *((%x5c .).1 / . ~ <">) <">').select(1).merge();
                     this['text'] = /[^<>]+/;
                     this['name'] = /[a-zA-Z\-0-9\:]+/;

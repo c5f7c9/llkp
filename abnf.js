@@ -6,8 +6,8 @@
     'use strict';
 
     var core = typeof window != typeof void 0 ?
-        window.LLKP.Core :
-        (require('./core.then'), require('./core'));
+        window.LLKP.Core : // for browsers
+        (require('./core.then'), require('./core')); // for Node
 
     var Pattern = core.Pattern;
     var txt = core.txt;
@@ -55,7 +55,7 @@
         function compile(ast) {
             if ('seq' in ast) return buildseq(ast);
             if ('any' in ast) return any.apply(null, ast.any.map(compile));
-            if ('rep' in ast) return rep(compile(ast.rep), ast.sep && compile(ast.sep), ast.min, ast.max);
+            if ('rep' in ast) return buildrep(ast);
             if ('opt' in ast) return opt(compile(ast.opt));
             if ('str' in ast) return str(ast.str);
             if ('txt' in ast) return txt(ast.txt);
@@ -82,6 +82,11 @@
         function buildseq(ast) {
             var p = seq.apply(null, ast.seq.map(compile));
             return ast.map ? p.map(ast.map) : p;
+        }
+
+        function buildrep(ast) {
+            var p = rep(compile(ast.rep), ast.sep && compile(ast.sep), ast.min, ast.max);
+            return ast.key && ast.val ? p.join(ast.key, ast.val) : p;
         }
 
         function ref(name) {
@@ -129,20 +134,31 @@
         rules.decstr = numstr('d', /[0-9]+/, 10);
         rules.binstr = numstr('b', /[0-1]+/, 2);
 
+        rules.lbl = rgx(/[a-z][a-z0-9_]*:/i).slice(0, -1);
+        rules.sel = rgx(/\.[a-z0-9]+/i).slice(1);
+        rules.key = rgx(/[a-z0-9_]+/i);
+
         rules.quantifier = any(
             seq(rgx(/\d*/), txt('*'), rgx(/\d*/)).then(function (r) { return { min: +r[0] || 0, max: +r[2] || +Infinity } }),
             rgx(/\d+/).then(function (r) { return { min: +r, max: +r } }));
 
+        rules.join = seq(txt('<'), ref('key'), rgx(/\s*:\s*/), ref('key'), txt('>')).map({ key: 1, val: 3 });
+
         rules.rep = any(
-            seq(ref('quantifier'), opt(ref('sep')), ref('element'))
-                .then(function (r) { return { rep: r[2], sep: r[1], min: r[0].min, max: r[0].max } }),
+            seq(ref('quantifier'), opt(ref('sep')), opt(ref('join')), ref('element')).then(function (r) {
+                return {
+                    rep: r[3],
+                    sep: r[1],
+                    min: r[0].min,
+                    max: r[0].max,
+                    key: r[2] && r[2].key,
+                    val: r[2] && r[2].val
+                };
+            }),
             ref('element'));
 
         rules.exc = seq(ref('rep'), opt(seq(rgx(/\s*~\s*/), ref('rep'))))
             .then(function (r) { return r[1] ? { exc: [r[0], r[1][1]] } : r[0] });
-
-        rules.lbl = rgx(/[a-z][a-z0-9_]*:/i).slice(0, -1);
-        rules.sel = rgx(/\.[a-z0-9]+/i).slice(1);
 
         rules.seq = rep(seq(opt(ref('lbl')), ref('exc')), rgx(/\s*/))
             .then(function (r) {
