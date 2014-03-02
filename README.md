@@ -2,7 +2,7 @@
 
 The goal of this library is to provide API that would look like the built-in RegExp class and would let easily write parsers for structures that cannot be parsed with regular expressions, such as XML-like structures, the e-mail pattern defined in RFC 822, the data URL pattern and so on.
 
-### Examples
+#### Examples
 
 To parse a list of comma separated key-value pairs with a parser written as ABNF:
 
@@ -15,7 +15,7 @@ var r = p.exec('charset=utf8,type=text,subtype=html');
 assert.deepEqual(r, { charset: 'utf8', type: 'text', subtype: 'html' });
 ````
 
-### Tests
+#### Tests
 
 Unit tests were written in the mocha's TDD style:
 
@@ -26,11 +26,11 @@ They can be run with npm:
 
     npm test
 
-### Code coverage
+#### Coverage
 
 TBD (istanbul?)
 
-### Static analysis
+#### Static analysis
 
 Static analysis is done by JSHint:
 
@@ -40,7 +40,11 @@ Static analysis is done by JSHint:
 This command is mentioned in package.json so it's enough to run `npm test`:
 
     npm test
+    
+#### Documentation
 
-### License
+Check out the [wiki](https://github.com/c5f7c9/llkp/wiki/_pages) page.
+
+#### License
 
 MIT
