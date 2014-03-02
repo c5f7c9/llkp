@@ -9,7 +9,7 @@
     "ABNF",
     "RFC 5234"
   ],
-  "version": "0.0.5",
+  "version": "0.0.6",
   "bin": {
     "core": "./core.js"
   },
