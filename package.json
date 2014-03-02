@@ -31,8 +31,8 @@
     }
   ],
   "scripts": {
-  "pretest": "jshint --exclude node_modules --verbose .",
-    "test": "mocha -u tdd"    
+    "pretest": "jshint --exclude node_modules --verbose .",
+    "test": "mocha -u tdd"
   },
   "readmeFilename": "README.md",
   "gitHead": "9fc9f50591fa36e41c65dcaeae2e1aa6f4a6897d",
