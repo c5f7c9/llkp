@@ -60,7 +60,6 @@
             if ('str' in ast) return str(ast.str);
             if ('txt' in ast) return txt(ast.txt);
             if ('rgx' in ast) return rgx(new RegExp(ast.rgx));
-            if ('chr' in ast) return rgx(/[\u0000-\uffff]/);
             if ('exc' in ast) return exc.apply(null, ast.exc.map(compile));
             if ('ref' in ast) return ref(ast.ref);
             if ('sel' in ast) return compile(ast.sel).select(ast.key);
@@ -186,13 +185,12 @@
             .then(function (r) { return !r[1] ? r[0] : { sel: r[0], key: r[1] } });
 
         rules.element = any(
-            any(quoted('"', '"'), quoted("'", "'"), quoted('<', '>')).as('txt'),
+            any(quoted('"', '"'), quoted("'", "'")).as('txt'),
             quoted('`', '`').as('rgx'),
             rgx(/[a-zA-Z][a-zA-Z0-9\-]*/).as('ref'),
             seq(txt('%'), any(ref('hexstr'), ref('decstr'), ref('binstr'))).select(1).as('str'),
             ref('sgr'),
-            seq(txt('?'), ref('element')).select(1).as('opt'),
-            txt('.').as('chr'));
+            seq(txt('?'), ref('element')).select(1).as('opt'));
 
         return ref('any');
     })();

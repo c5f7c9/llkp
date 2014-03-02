@@ -94,28 +94,6 @@ suite('ABNF', function () {
             }
         });
 
-        psuite('AngleQuotedText', {
-            '<>': {
-                '': '',
-                ' ': null,
-                'a': null,
-                '\n': null
-            },
-
-            '<abc>': {
-                'abc': 'abc',
-                'ab': null,
-                'abcd': null,
-                '': null
-            },
-
-            '<a> <b>': {
-                'ab': ['a', 'b'],
-                'a b': null,
-                '': null
-            }
-        });
-
         psuite('Num', {
             '%x31': {
                 '1': '1',
@@ -245,18 +223,16 @@ suite('ABNF', function () {
                 'a=1': [['a', '=', '1']],
                 '': null,
                 '3=4': null
-            }
-        });
+            },
 
-        psuite('AnyChr', {
-            '.': {
+            '`.`': {
                 '1': '1',
                 '.': '.',
                 '\u3245': '\u3245',
                 '': null
             },
 
-            '"a" ?.': {
+            '"a" ?`.`': {
                 'ab': ['a', 'b'],
                 'a': ['a', void 0],
                 'b': null,
@@ -344,7 +320,7 @@ suite('ABNF', function () {
                 '1': null
             },
 
-            '[(<https>/<http>) <:>] <//>': {
+            '[("https" / "http") ":"] "//"': {
                 'http://': [['http', ':'], '//'],
                 'https://': [['https', ':'], '//'],
                 'httpss://': null
@@ -457,7 +433,7 @@ suite('ABNF', function () {
         });
 
         psuite('Alternation', {
-            '1*{" "}("abc" / <def> / \'ghi\')': {
+            '1*{" "}("abc" / `def` / \'ghi\')': {
                 'abc ghi def': ['abc', 'ghi', 'def'],
                 'def ghi': ['def', 'ghi'],
                 'abc def ghi': ['abc', 'def', 'ghi'],
@@ -504,25 +480,25 @@ suite('ABNF', function () {
         });
 
         psuite('Repetition', {
-            '1.': {
+            '1`.`': {
                 'a': ['a'],
                 'ab': null
             },
 
-            '4.': {
+            '4`.`': {
                 '1234': ['1', '2', '3', '4'],
                 '123': null,
                 '': null
             },
 
-            '2*.': {
+            '2*`.`': {
                 '123': ['1', '2', '3'],
                 '12': ['1', '2'],
                 '1': null,
                 '': null
             },
 
-            '*4.': {
+            '*4`.`': {
                 '1234': ['1', '2', '3', '4'],
                 '123': ['1', '2', '3'],
                 '1': ['1'],
@@ -530,7 +506,7 @@ suite('ABNF', function () {
                 '12345': null
             },
 
-            '2*4.': {
+            '2*4`.`': {
                 '': null,
                 '1': null,
                 '12': ['1', '2'],
@@ -540,12 +516,12 @@ suite('ABNF', function () {
 
             },
 
-            '2*3(4*5.)': {
+            '2*3(4*5`.`)': {
                 '123456789': [['1', '2', '3', '4', '5'], ['6', '7', '8', '9']],
                 '12341234': null
             },
 
-            '*("1" / "2" / "3") *.': {
+            '*("1" / "2" / "3") *`.`': {
                 '123': [['1', '2', '3'], []],
                 '123456': [['1', '2', '3'], ['4', '5', '6']]
             },
@@ -595,38 +571,38 @@ suite('ABNF', function () {
         });
 
         psuite('Exclusion', {
-            '<A> ~ <B>': {
+            '"A" ~ "B"': {
                 'A': 'A',
                 'B': null,
                 'C': null,
                 '': null
             },
 
-            '<1> ~ <1>': {
+            '"1" ~ "1"': {
                 '1': null,
                 '2': null,
                 '': null
             },
 
-            '. ~ <W>': {
+            '%x00-FF ~ "W"': {
                 '1': '1',
                 'W': null,
                 '': null
             },
 
-            '. ~ (<A> / <B> / <C>)': {
+            '%x00-FF ~ ("A" / "B" / "C")': {
                 'A': null,
                 'B': null,
                 'C': null,
                 'D': 'D'
             },
 
-            '*{<">}(*(. ~ <">))': {
+            '*{%x22}(*(%x00-FF ~ %x22))': {
                 '123"456': [['1', '2', '3'], ['4', '5', '6']],
                 '': []
             },
 
-            '<"> *(<`"> / . ~ <">) <">': {
+            '%x22 *(%x60.22 / %x00-FF ~ %x22) %x22': {
                 '"123"': ['"', ['1', '2', '3'], '"'],
                 '"1`"23"': ['"', ['1', '`"', '2', '3'], '"'],
                 '""': ['"', [], '"'],
@@ -634,7 +610,7 @@ suite('ABNF', function () {
                 '"123`"456': null
             },
 
-            '1*{<A> / <B> / <C>}(1*(. ~ (<A> / <B> / <C>)))': {
+            '1*{"A" / "B" / "C"}(1*(%x00-FF ~ ("A" / "B" / "C")))': {
                 '123A456B789C0': [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"], ["0"]]
             }
         });
@@ -821,7 +797,11 @@ suite('ABNF', function () {
 
     suite('PracticalApplications', function () {
         ptest('qstr', function () {
-            this.qstr = ABNF('<"> *((%x5c .).1 / . ~ <">) <">').select(1).merge();
+            this.qstr = ABNF('quote *((esc char).1 / char ~ quote) quote', {
+                quote: '%x22',
+                char: '%x00-FF',
+                esc: '%x5c'
+            }).select(1).merge();
         }, {
             '""': '',
             '"qwerty"': 'qwerty',
@@ -905,7 +885,7 @@ suite('ABNF', function () {
         ptest('data-url', function (rule) {
             this['data-url'] = 'scheme ?wsp mime:?mime ?wsp attrs:attributes ?wsp "," ?wsp data:data';
             this['attributes'] = '*<akey:aval>(?wsp ";" ?wsp akey:token ?wsp aval:["=" ?wsp v:(token / str)].v ?wsp)';
-            this['str'] = rule('<"> *((%x5c .).1 / . ~ <">) <">').select(1).merge();
+            this['str'] = ABNF('%x22 *((%x5c %x00-FF).1 / %x00-FF ~ %x22) %x22').select(1).merge();
             this['scheme'] = /\s*data\s*:\s*/;
             this['token'] = /[^=;,"\s]+/;
             this['wsp'] = /\s+/;
@@ -971,7 +951,7 @@ suite('ABNF', function () {
                 this['attr-sep'] = /\s*,\s*/;
                 this['wsp'] = /\s*/;
                 this['eq'] = /\s*=\s*/;
-                this['quoted-str'] = rule('<"> *((%x5c .).1 / . ~ <">) <">').select(1).merge();
+                this['quoted-str'] = rule(/".*?"/).slice(+1, -1);
             });
 
             var input = 'Digest username="Mufasa", realm="testrealm@host.com",nonce="12",uri="/dir/index.html",qop=auth,nc=2,cnonce="3",response="44",opaque="55"Basic realm="testrealm@host.com",nonce="12",uri="/dir/index.html",qop=auth,nc=2,cnonce="3",response="44",opaque="55", NTLM, Negotiate';
@@ -1038,8 +1018,8 @@ suite('ABNF', function () {
                 this['element'] = 'rule-ref / group / option / char-val / num-val';
                 this['rule-ref'] = 'ref:rule-name';
                 this['group'] = '("(" *wsp x:alternation *wsp ")").x';
-                this['option'] = 'opt:("[" *wsp x:alternation *wsp "]").x';
-                this['char-val'] = rule('<"> *(%x20-21 / %x23-7e) <">').select(1).merge().as('str');
+                this['option'] = '"[" *wsp opt:alternation *wsp "]"';
+                this['char-val'] = rule('%x22 *(%x20-21 / %x23-7e) %x22').select(1).merge().as('str');
                 this['num-val'] = '("%" (bin-val / dec-val / hex-val)).1';
                 this['bin-val'] = '"b" min:bin-num max:["-" bin-num].1';
                 this['dec-val'] = '"d" min:dec-num max:["-" dec-num].1';
@@ -1345,7 +1325,7 @@ suite('ABNF', function () {
                         });
 
                     this['attrs'] = '1*{wsp}<0:1>(name ["=" str].1)';
-                    this['str'] = rule('<"> *((%x5c .).1 / . ~ <">) <">').select(1).merge();
+                    this['str'] = rule('%x22 *((%x5c %x00-FF).1 / %x00-FF ~ %x22) %x22').select(1).merge();
                     this['text'] = /[^<>]+/;
                     this['name'] = /[a-zA-Z\-0-9\:]+/;
                     this['wsp'] = /[\x00-\x20]+/;
