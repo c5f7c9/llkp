@@ -11,7 +11,7 @@
 
     prototype.select = function (index) {
         return this.then(function (r) {
-            return r[index];
+            return r ? r[index] : void 0;
         });
     };
 

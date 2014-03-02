@@ -63,6 +63,7 @@
             if ('chr' in ast) return rgx(/[\u0000-\uffff]/);
             if ('exc' in ast) return exc.apply(null, ast.exc.map(compile));
             if ('ref' in ast) return ref(ast.ref);
+            if ('sel' in ast) return compile(ast.sel).select(ast.key);
         }
 
         function build(definition, name) {
@@ -80,8 +81,7 @@
 
         function buildseq(ast) {
             var p = seq.apply(null, ast.seq.map(compile));
-            var m = ast.map;
-            return !m ? p : p.map(m);
+            return ast.map ? p.map(ast.map) : p;
         }
 
         function ref(name) {
@@ -142,6 +142,7 @@
             .then(function (r) { return r[1] ? { exc: [r[0], r[1][1]] } : r[0] });
 
         rules.lbl = rgx(/[a-z][a-z0-9_]*:/i).slice(0, -1);
+        rules.sel = rgx(/\.[a-z0-9]+/i).slice(1);
 
         rules.seq = rep(seq(opt(ref('lbl')), ref('exc')), rgx(/\s*/))
             .then(function (r) {
@@ -162,14 +163,18 @@
             .then(function (r) { return r.length == 1 ? r[0] : { any: r } });
 
         rules.sep = seq(rgx(/\s*\{\s*/), ref('any'), rgx(/\s*\}\s*/)).select(1);
+        rules.grp = seq(rgx(/\s*\(\s*/), ref('any'), rgx(/\s*\)\s*/)).select(1);
+        rules.opt = seq(rgx(/\s*\[\s*/), ref('any'), rgx(/\s*\]\s*/)).select(1).as('opt');
+
+        rules.sgr = seq(any(ref('grp'), ref('opt')), opt(ref('sel')))
+            .then(function (r) { return !r[1] ? r[0] : { sel: r[0], key: r[1] } });
 
         rules.element = any(
             any(quoted('"', '"'), quoted("'", "'"), quoted('<', '>')).as('txt'),
             quoted('`', '`').as('rgx'),
             rgx(/[a-zA-Z][a-zA-Z0-9\-]*/).as('ref'),
             seq(txt('%'), any(ref('hexstr'), ref('decstr'), ref('binstr'))).select(1).as('str'),
-            seq(rgx(/\s*\(\s*/), ref('any'), rgx(/\s*\)\s*/)).select(1),
-            seq(rgx(/\s*\[\s*/), ref('any'), rgx(/\s*\]\s*/)).select(1).as('opt'),
+            ref('sgr'),
             seq(txt('?'), ref('element')).select(1).as('opt'),
             txt('.').as('chr'));
 

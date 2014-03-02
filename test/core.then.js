@@ -34,6 +34,14 @@ suite('Core.Then', function () {
 
             assert.equal(r, void 0);
         });
+
+        test(4, function () {
+            var p = opt(txt('x')).select(123);
+            var s = '';
+            var r = p.exec(s);
+
+            assert.equal(r, void 0);
+        });
     });
 
     suite('as', function () {

@@ -411,6 +411,35 @@ suite('ABNF', function () {
             }
         });
 
+        psuite('Selection', {
+            '("x" "y").0': {
+                'xy': 'x',
+                '12': null
+            },
+
+            '("x" "y").1': {
+                'xy': 'y',
+                '12': null
+            },
+
+            '("x" "y").2': {
+                'xy': void 0,
+                '12': null
+            },
+
+            '("=" val:`\\d+`).val': {
+                '=123': '123',
+                '=0': '0',
+                '=a': null
+            },
+
+            'key:`\\w+` val:["=" `\\d+`].1': {
+                'abc=123': { key: 'abc', val: '123' },
+                'abc': { key: 'abc', val: void 0 },
+                'abc=': null
+            }
+        });
+
         psuite('Alternation', {
             '1*{" "}("abc" / <def> / \'ghi\')': {
                 'abc ghi def': ['abc', 'ghi', 'def'],
@@ -776,9 +805,7 @@ suite('ABNF', function () {
 
     suite('PracticalApplications', function () {
         ptest('qstr', function () {
-            this.qstr = ABNF('<"> *(escaped / . ~ <">) <">', {
-                escaped: ABNF('%x5c .').select(1)
-            }).select(1).merge();
+            this.qstr = ABNF('<"> *((%x5c .).1 / . ~ <">) <">').select(1).merge();
         }, {
             '""': '',
             '"qwerty"': 'qwerty',
@@ -862,10 +889,8 @@ suite('ABNF', function () {
         ptest('data-url', function (rule) {
             this['data-url'] = 'scheme ?wsp mime:?mime ?wsp attrs:attributes ?wsp "," ?wsp data:data';
             this['attributes'] = rule('*attr').join('akey', 'aval');
-            this['attr'] = '?wsp ";" ?wsp akey:token ?wsp aval:?attr-val ?wsp';
-            this['attr-val'] = rule('"=" ?wsp (token / str)').select(2);
-            this['str'] = rule('<"> *(escaped / . ~ <">) <">').select(1).merge();
-            this['escaped'] = rule('%x5c .').select(1);
+            this['attr'] = '?wsp ";" ?wsp akey:token ?wsp aval:["=" ?wsp (token / str)].2 ?wsp';
+            this['str'] = rule('<"> *((%x5c .).1 / . ~ <">) <">').select(1).merge();
             this['scheme'] = /\s*data\s*:\s*/;
             this['token'] = /[^=;,"\s]+/;
             this['wsp'] = /\s+/;
@@ -927,14 +952,13 @@ suite('ABNF', function () {
             var pattern = ABNF('www-auth', function (rule) {
                 this['www-auth'] = rule('*{ch-sep}challenge').join('name', 'attrs');
                 this['challenge'] = 'name:name wsp attrs:attributes';
-                this['attributes'] = rule('*{attr-sep}(name eq (name / quoted-str))').join(0, 2);
+                this['attributes'] = rule('*{attr-sep}(key:name eq val:(name / quoted-str))').join('key', 'val');
                 this['name'] = /[^,;="'\s]+/;
                 this['ch-sep'] = /[,\s]*/;
                 this['attr-sep'] = /\s*,\s*/;
                 this['wsp'] = /\s*/;
                 this['eq'] = /\s*=\s*/;
-                this['quoted-str'] = rule('<"> *(escaped-char / . ~ <">) <">').select(1).merge();
-                this['escaped-char'] = rule('%x5c .').select(1);
+                this['quoted-str'] = rule('<"> *((%x5c .).1 / . ~ <">) <">').select(1).merge();
             });
 
             var input = 'Digest username="Mufasa", realm="testrealm@host.com",nonce="12",uri="/dir/index.html",qop=auth,nc=2,cnonce="3",response="44",opaque="55"Basic realm="testrealm@host.com",nonce="12",uri="/dir/index.html",qop=auth,nc=2,cnonce="3",response="44",opaque="55", NTLM, Negotiate';
@@ -990,8 +1014,7 @@ suite('ABNF', function () {
 
             // this is the parser
             var p = ABNF('ABNF', function (rule) {
-                this['ABNF'] = rule('1*{%x0a}rule-def').join('name', 'def');
-                this['rule-def'] = 'name:rule-name *wsp "=" *wsp def:alternation';
+                this['ABNF'] = rule('1*{%x0a}(name:rule-name *wsp "=" *wsp def:alternation)').join('name', 'def');
                 this['rule-name'] = /[a-zA-Z][\w-]*\w/;
                 this['alternation'] = rule('1*{*wsp "/" *wsp}concatenation').then(function (r) { return r.length > 1 ? { alt: r } : r[0] });
                 this['concatenation'] = rule('1*{1*wsp}(repetition / element)').then(function (r) { return r.length > 1 ? { con: r } : r[0] });
@@ -1002,13 +1025,13 @@ suite('ABNF', function () {
                 this['number'] = rule(/\d+/).parseInt(10);
                 this['element'] = 'rule-ref / group / option / char-val / num-val';
                 this['rule-ref'] = 'ref:rule-name';
-                this['group'] = rule('"(" *wsp alternation *wsp ")"').select(2);
-                this['option'] = rule('"[" *wsp alternation *wsp "]"').select(2).as('opt');
+                this['group'] = '("(" *wsp x:alternation *wsp ")").x';
+                this['option'] = 'opt:("[" *wsp x:alternation *wsp "]").x';
                 this['char-val'] = rule('<"> *(%x20-21 / %x23-7e) <">').select(1).merge().as('str');
-                this['num-val'] = rule('"%" (bin-val / dec-val / hex-val)').select(1);
-                this['bin-val'] = rule('"b" bin-num ["-" bin-num]').then(function (r) { return { min: r[1], max: r[2] && r[2][1] } });
-                this['dec-val'] = rule('"d" dec-num ["-" dec-num]').then(function (r) { return { min: r[1], max: r[2] && r[2][1] } });
-                this['hex-val'] = rule('"x" hex-num ["-" hex-num]').then(function (r) { return { min: r[1], max: r[2] && r[2][1] } });
+                this['num-val'] = '("%" (bin-val / dec-val / hex-val)).1';
+                this['bin-val'] = '"b" min:bin-num max:["-" bin-num].1';
+                this['dec-val'] = '"d" min:dec-num max:["-" dec-num].1';
+                this['hex-val'] = '"x" min:hex-num max:["-" hex-num].1';
                 this['bin-num'] = rule(/[0-1]+/).parseInt(2);
                 this['dec-num'] = rule(/[0-9]+/).parseInt(10);
                 this['hex-num'] = rule(/[0-9a-fA-F]+/).parseInt(16);
@@ -1250,10 +1273,10 @@ suite('ABNF', function () {
             });
 
             test('B', function () {
-                var pattern = ABNF('1*{","}pair', function (rule) {
-                    this['name'] = /[a-zA-Z][a-zA-Z0-9\-]+/;
-                    this['value'] = /[\w\-]+/;
-                    this['pair'] = rule('name:name "=" value:value');
+                var pattern = ABNF('1*{","}pair', {
+                    name: /[a-zA-Z][a-zA-Z0-9\-]+/,
+                    value: /[\w\-]+/,
+                    pair: 'name:name "=" value:value'
                 });
 
                 var results = pattern.exec('charset=utf-8,tag=123,doc-type=html');
@@ -1269,8 +1292,8 @@ suite('ABNF', function () {
         test('JSON', function () {
             // The ABNF grammar of JSON was taken from RFC 4627.
             var pattern = ABNF('object / array', function (rule) {
-                this['object'] = rule('"{" *{","}(string ":" value) "}"').select(1).join(0, 2);
-                this['array'] = rule('"[" *{","}value "]"').select(1);
+                this['object'] = rule('"{" *{","}(s:string ":" v:value) "}"').select(1).join('s', 'v');
+                this['array'] = '("[" *{","}value "]").1';
                 this['value'] = 'object / array / number / string / false / true / null';
                 this['false'] = rule('"false"').then(function () { return false });
                 this['true'] = rule('"true"').then(function () { return true });
@@ -1309,11 +1332,8 @@ suite('ABNF', function () {
                             return { name: r.open, attrs: r.attrs, subnodes: r.nodes };
                         });
 
-                    this['attrs'] = rule('1*{wsp}attr').join('name', 'value');
-                    this['value'] = rule('"=" str').select(1);
-                    this['attr'] = 'name:name value:?value';
-                    this['str'] = rule('<"> *(escaped / . ~ <">) <">').select(1).merge();
-                    this['escaped'] = rule('%x5c .').select(1);
+                    this['attrs'] = rule('1*{wsp}(name ["=" str].1)').join(0, 1);
+                    this['str'] = rule('<"> *((%x5c .).1 / . ~ <">) <">').select(1).merge();
                     this['text'] = /[^<>]+/;
                     this['name'] = /[a-zA-Z\-0-9\:]+/;
                     this['wsp'] = /[\x00-\x20]+/;
