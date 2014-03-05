@@ -43,6 +43,7 @@ They can be run with npm:
 
 `istanbul` can be used with `mocha`'s unit tests in the following way (figure out the full path to `_mocha`):
 
+    npm install -g istanbul
     istanbul cover .../npm/node_modules/mocha/bin/_mocha -- -u tdd
     
 It will produce an output like:
