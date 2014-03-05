@@ -17,6 +17,17 @@ var r = p.exec('charset=utf8,type=text,subtype=html');
 assert.deepEqual(r, { charset: 'utf8', type: 'text', subtype: 'html' });
 ````
 
+To parse a list of comma separated key-value pairs with a parser written as PEG:
+
+````js
+var PEG = require('llkp/peg');
+
+var p = new PEG('(key "=" val)<",">+', { key: /\w+/, val: /\w+/ }).join(0, 2);
+var r = p.exec('charset=utf8,type=text,subtype=html');
+
+assert.deepEqual(r, { charset: 'utf8', type: 'text', subtype: 'html' });
+````
+
 #### Tests
 
 Unit tests were written in the mocha's TDD style:
