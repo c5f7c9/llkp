@@ -12,7 +12,7 @@ suite('Simulates loading scripts in a browser', function () {
 
     function load(path) {
         var text = fs.readFileSync(path, 'utf8');
-        var func = new Function('window', 'module', 'exports', 'require', text);
+        var func = new Function('window', 'module', 'exports', 'require', text); // jshint ignore:line
         return func(window);
     }
 
