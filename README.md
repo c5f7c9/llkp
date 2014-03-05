@@ -41,7 +41,16 @@ They can be run with npm:
 
 #### Coverage
 
-TBD (istanbul?)
+`istanbul` can be used with `mocha`'s unit tests in the following way (figure out the full path to `_mocha`):
+
+    istanbul cover .../npm/node_modules/mocha/bin/_mocha -- -u tdd
+    
+It will produce an output like:
+
+    Statements   : 98.06% ( 353/360 )
+    Branches     : 89.84% ( 168/187 )
+    Functions    : 100% ( 96/96 )
+    Lines        : 97.89% ( 325/332 )
 
 #### Static analysis
 
