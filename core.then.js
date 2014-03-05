@@ -6,7 +6,7 @@
     'use strict';
 
     var prototype = typeof window != typeof void 0 ?
-        window.LLKP.Pattern.prototype : // for browsers
+        window.LLKP.Core.Pattern.prototype : // for browsers
         require('./core').Pattern.prototype; // for Node
 
     prototype.make = function (value) {
