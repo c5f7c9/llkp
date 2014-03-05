@@ -9,6 +9,12 @@
         window.LLKP.Pattern.prototype : // for browsers
         require('./core').Pattern.prototype; // for Node
 
+    prototype.make = function (value) {
+        return this.then(function () {
+            return value;
+        });
+    };
+
     prototype.select = function (index) {
         return this.then(function (r) {
             return r ? r[index] : void 0;

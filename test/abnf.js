@@ -1287,9 +1287,9 @@ suite('ABNF', function () {
                 this['object'] = '("{" obj:*{","}<s:v>(s:string ":" v:value) "}").obj';
                 this['array'] = '("[" a:*{","}value "]").a';
                 this['value'] = 'object / array / number / string / false / true / null';
-                this['false'] = rule('"false"').then(function () { return false });
-                this['true'] = rule('"true"').then(function () { return true });
-                this['null'] = rule('"null"').then(function () { return null });
+                this['false'] = rule('"false"').make(false);
+                this['true'] = rule('"true"').make(true);
+                this['null'] = rule('"null"').make(null);
                 this['number'] = rule('["-"] `\\d+` ["." `\\d+`] ["e" ["+" / "-"] `\\d+`]').text().parseFloat();
                 this['string'] = rule('%x22 s:*char %x22').select('s').merge();
                 this['char'] = /[^"]/; // RFC 4627 specifies a more complicated rule for this

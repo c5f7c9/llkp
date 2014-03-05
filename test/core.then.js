@@ -13,6 +13,22 @@ var rep = core.rep;
 suite('Core.Then', function () {
     'use strict';
 
+    suite('make', function () {
+        test(1, function () {
+            var p = txt('abc').make(123);
+            var r = p.exec('abc');
+
+            assert.equal(r, 123);
+        });
+
+        test(2, function () {
+            var p = rep(any(rgx(/[0-9]+/).make('d'), rgx(/[a-z]+/).make('w')));
+            var r = p.exec('ab17cb27kjdjs73dk3');
+
+            assert.deepEqual(r, ['w', 'd', 'w', 'd', 'w', 'd', 'w', 'd']);
+        });
+    });
+
     suite('select', function () {
         test(1, function () {
             var p = rep(rgx(/\w+/), txt(',')).select(0);
