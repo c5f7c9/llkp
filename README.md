@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/c5f7c9/llkp.png)](https://travis-ci.org/c5f7c9/llkp)
 
-The goal of this library is to provide API that would look like the built-in RegExp class and would let easily write parsers for structures that cannot be parsed with regular expressions, such as XML-like structures, the e-mail pattern defined in RFC 822, the data URL pattern and so on.
+The goal of this library is to provide API that would look like the built-in [RegExp](http://www.ecma-international.org/ecma-262/5.1/#sec-15.10) class and would let easily write parsers for structures that cannot be parsed with regular expressions, such as XML-like structures, the [e-mail](https://www.ietf.org/rfc/rfc0822.txt) pattern, [data URL](https://www.ietf.org/rfc/rfc2397.txt), [URI](http://tools.ietf.org/html/rfc3986) and so on.
 
 #### Examples
 
