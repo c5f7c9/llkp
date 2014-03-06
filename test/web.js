@@ -1,7 +1,13 @@
+// Simulates loading scripts in a browser.
+//
+// This test does not help to improve the branch coverage number
+// reported by istanbul because istanbul hooks into `require`
+// and this test uses `readFileSync` instead of `require`.
+
 var assert = require('assert');
 var fs = require('fs');
 
-suite('Simulates loading scripts in a browser', function () {
+suite('Web', function () {
     'use strict';
 
     var window;

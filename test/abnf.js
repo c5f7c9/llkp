@@ -1314,34 +1314,21 @@ suite('ABNF', function () {
             setup(function () {
                 // this is a simplified grammar of XML:
                 p = ABNF('node', function (rule) {
-                    this['node'] = 'normal-node / empty-node';
-                    this['empty-node'] = '"<" name:name ?wsp attrs:?attrs "/>"';
-
-                    this['normal-node'] = rule('"<" open:name ?wsp attrs:?attrs ">" nodes:*(node / text) "</" close:name ">"')
-                        .then(function (r) {
-                            if (r.open != r.close)
-                                throw new SyntaxError('Invalid XML: ' + r.close + ' does not match ' + r.open);
-                            return { name: r.open, attrs: r.attrs, subnodes: r.nodes };
-                        });
-
-                    this['attrs'] = '1*{wsp}<0:1>(name ["=" str].1)';
-                    this['str'] = rule('%x22 *((%x5c %x00-FF).1 / %x00-FF ~ %x22) %x22').select(1).merge();
+                    this['node'] = 'regular / empty';
+                    this['empty'] = '"<" name:name ?wsp attrs:?attrs "/>"';
+                    this['regular'] = '"<" name:name ?wsp attrs:?attrs ">" nodes:*(node / text) "</" name ">"';
+                    this['attrs'] = rule('1*{wsp}(name [value])').join(0, 1);
+                    this['value'] = rule(/=".*?"/).slice(+2, -1);
                     this['text'] = /[^<>]+/;
                     this['name'] = /[a-zA-Z\-0-9\:]+/;
                     this['wsp'] = /[\x00-\x20]+/;
                 });
             });
 
-            test('Invalid', function () {
-                assert.throws(
-                    function () { p.exec('<abc>123</def>') },
-                    'SyntaxError: Invalid XML: def does not match abc');
-            });
-
             test('Simple', function () {
                 assert.deepEqual(
                     p.exec('<abc>123</abc>'),
-                    { name: 'abc', attrs: void 0, subnodes: ['123'] });
+                    { name: 'abc', attrs: void 0, nodes: ['123'] });
             });
 
             test('Complex', function () {
@@ -1359,15 +1346,15 @@ suite('ABNF', function () {
                 var r = {
                     name: 'root',
                     attrs: { 'attr-1': 'value-1', 'attr-2': void 0 },
-                    subnodes: [
+                    nodes: [
                         {
                             name: 'aaa',
                             attrs: { x: '1', y: '2', z: '3' },
-                            subnodes: [
+                            nodes: [
                                 {
                                     name: 'aaa-1',
                                     attrs: void 0,
-                                    subnodes: ['some text inside aaa-1']
+                                    nodes: ['some text inside aaa-1']
                                 },
                                {
                                    name: 'aaa-empty',
@@ -1380,10 +1367,10 @@ suite('ABNF', function () {
                        {
                            name: 'w1',
                            attrs: void 0,
-                           subnodes: [{
+                           nodes: [{
                                name: 'w2',
                                attrs: void 0,
-                               subnodes: [{ name: 'w3', attrs: void 0, subnodes: [] }]
+                               nodes: [{ name: 'w3', attrs: void 0, nodes: [] }]
                            }]
                        }]
                 };
