@@ -6,7 +6,7 @@ The goal of this library is to provide API that would look like the built-in [Re
 
 #### Examples
 
-To parse a list of comma separated key-value pairs with a parser written as ABNF:
+To parse a list of comma separated key-value pairs with a parser written as [ABNF](http://tools.ietf.org/html/rfc5234):
 
 ````js
 var ABNF = require('llkp/abnf');
