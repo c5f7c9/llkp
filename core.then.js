@@ -2,7 +2,7 @@
 // Extends Pattern.prototype.
 // Depends on `core` module.
 
-!function () {
+(function () {
     'use strict';
 
     var prototype = typeof window != typeof void 0 ?
@@ -98,4 +98,4 @@
             return flatten(r);
         });
     };
-}(); // jshint ignore:line
+})();

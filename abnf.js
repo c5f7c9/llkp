@@ -2,7 +2,7 @@
 // Exports LLKP.ABNF class.
 // Depends on `core.then` module.
 
-!function () {
+(function () {
     'use strict';
 
     var core = typeof window != typeof void 0 ?
@@ -70,7 +70,7 @@
                 return rgx(definition);
 
             if (definition instanceof Function)
-                return new Pattern(name || definition, definition);
+                return new Pattern(name, definition);
 
             if (definition instanceof Pattern)
                 return definition;
@@ -200,4 +200,4 @@
 
     if (typeof window != typeof void 0) // for browsers
         window.LLKP.ABNF = ABNF;
-}(); // jshint ignore:line
+})();

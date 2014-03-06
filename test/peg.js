@@ -230,6 +230,33 @@ suite('PEG', function () {
         });
     });
 
+    suite('ErrorHandling', function () {
+        test('InvalidRule', function () {
+            assert.throws(
+                function () { PEG('[a-') },
+                'SyntaxError: Invalid PEG rule: [a-');
+        });
+
+        test('UndefinedRule', function () {
+            assert.throws(
+                function () { PEG('a') },
+                'SyntaxError: Rule is not defined: a');
+        });
+    });
+
+    suite('NamedRules', function () {
+        test('CustomPattern', function () {
+            var p = PEG('c', {
+                c: function (str, pos) {
+                    if (str.charAt(pos) == 'w')
+                        return { res: str.charAt(pos).toUpperCase(), end: pos + 1 };
+                }
+            });
+
+            assert.equal(p.exec('w'), 'W');
+        });
+    });
+
     suite('PracticalApplications', function () {
         ptest('[+-]? [0-9]+ ("." [0-9]+)? ([eE] [+-]? [0-9]+)?', {
             "5": [void 0, ["5"], void 0, void 0],

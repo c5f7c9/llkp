@@ -2,7 +2,7 @@
 // Exports LLKP.Core namespace.
 // Does not depend on other modules.
 
-!function () {
+(function () {
     'use strict';
 
     function Pattern(name, exec) {
@@ -127,4 +127,4 @@
         if (typeof window != typeof void 0) // for browsers
             window.LLKP = { Core: exports };
     })();
-}(); // jshint ignore:line
+})();

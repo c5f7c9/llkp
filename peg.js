@@ -2,7 +2,7 @@
 // Exports LLKP.PEG class.
 // Depends on `core.then` module.
 
-!function () {
+(function () {
     'use strict';
 
     var core = typeof window != typeof void 0 ?
@@ -72,7 +72,7 @@
                 return rgx(definition);
 
             if (definition instanceof Function)
-                return new Pattern(name || definition, definition);
+                return new Pattern(name, definition);
 
             if (definition instanceof Pattern)
                 return definition;
@@ -161,9 +161,9 @@
         });
     }
 
-    if (typeof module != typeof void 0) // for Node
-        module.exports = PEG;
-
-    if (typeof window != typeof void 0) // for browsers
-        window.LLKP.PEG = PEG;
-}(); // jshint ignore:line
+    if (typeof module != typeof void 0)
+        module.exports = PEG; // for Node
+    
+    if (typeof window != typeof void 0)
+        window.LLKP.PEG = PEG; // for browsers
+})();

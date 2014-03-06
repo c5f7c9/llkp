@@ -1,7 +1,7 @@
 // Debugging extensions for parsing functions.
 // Installs debugging methods to Pattern.prototype.
 
-!function () {
+(function () {
     'use strict';
 
     var Pattern = typeof window != typeof void 0 ?
@@ -33,4 +33,4 @@
             return r;
         });
     };
-}(); // jshint ignore:line
+})();
