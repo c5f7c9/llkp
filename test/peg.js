@@ -1,38 +1,38 @@
 var assert = require('assert');
 var PEG = require('../peg');
 
-console.inspect = function (object) {
-    var inspect = require('util').inspect;
-    return console.log(inspect(object, { depth: null }));
-};
-
-function forEach(dict, fn) {
-    for (var key in dict)
-        fn(dict[key], key);
-}
-
-function ptest(pattern, samples) {
-    var rules = {
-        'num': PEG(/\d+/).parseInt(),
-        'var': /[a-zA-Z]\w+/
-    };
-
-    if (arguments.length == 3) {
-        rules = arguments[1];
-        samples = arguments[2];
-    }
-
-    forEach(samples, function (expectedResult, input) {
-        var testName = 'PEG(' + pattern + ').exec(' + input + ') = ' + expectedResult;
-        test(testName, function () {
-            var result = PEG(pattern, rules).exec(input);
-            assert.deepEqual(result, expectedResult);
-        });
-    });
-}
-
 suite('PEG', function () {
     'use strict';
+
+    console.inspect = function (object) {
+        var inspect = require('util').inspect;
+        return console.log(inspect(object, { depth: null }));
+    };
+
+    function forEach(dict, fn) {
+        for (var key in dict)
+            fn(dict[key], key);
+    }
+
+    function ptest(pattern, samples) {
+        var rules = {
+            'num': PEG(/\d+/).parseInt(),
+            'var': /[a-zA-Z]\w+/
+        };
+
+        if (arguments.length == 3) {
+            rules = arguments[1];
+            samples = arguments[2];
+        }
+
+        forEach(samples, function (expectedResult, input) {
+            var testName = 'PEG(' + pattern + ').exec(' + input + ') = ' + expectedResult;
+            test(testName, function () {
+                var result = PEG(pattern, rules).exec(input);
+                assert.deepEqual(result, expectedResult);
+            });
+        });
+    }
 
     suite('BasicParsing', function () {
         suite('Text', function () {
@@ -57,7 +57,7 @@ suite('PEG', function () {
             });
         });
 
-        suite('Class', function () {
+        suite('Charset', function () {
             ptest('[]', {
                 '': null,
                 'a': null
@@ -126,6 +126,14 @@ suite('PEG', function () {
                 'abcabc': [['a', 'b', 'c'], ['a', 'b', 'c']],
                 'abca': null,
                 '': null
+            });
+
+            ptest('[a-z]+ ("=" [0-9]+).1', {
+                'abc=123': [['a', 'b', 'c'], ['1', '2', '3']],
+            });
+
+            ptest('tag:[a-z]+ val:("=" x:[0-9]+).x', {
+                'abc=123': { tag: ['a', 'b', 'c'], val: ['1', '2', '3'] },
             });
         });
 

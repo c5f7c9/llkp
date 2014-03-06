@@ -125,11 +125,10 @@
             seq($('atm'), txt('?')).select(0).as('opt'),
             seq($('atm'), $('qtf')).then(function (r) { r[1].rep = r[0]; return r[1]; }),
             $('atm'));
-
         this.grp = seq(txt('('), $('def'), txt(')'), opt(seq(txt('.'), $('lbl')).select(1))).map({ def: 1, key: 3 });
         this.qtf = seq(opt($('sep')), any(txt('+').make(1), txt('*').make(0))).map({ sep: 0, min: 1 });
         this.sep = seq(txt('<'), $('def'), txt('>')).select(1);
-        this.lbl = rgx(/[a-z]+/i);
+        this.lbl = rgx(/[a-z0-9]+/i);
         this.def = $('alt');
     });
 
