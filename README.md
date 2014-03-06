@@ -48,10 +48,10 @@ They can be run with npm:
     
 It will produce an output like:
 
-    Statements   : 98.06% ( 353/360 )
-    Branches     : 89.84% ( 168/187 )
+    Statements   : 98.89% ( 356/360 )
+    Branches     : 92.97% ( 172/185 )
     Functions    : 100% ( 96/96 )
-    Lines        : 97.89% ( 325/332 )
+    Lines        : 98.8% ( 328/332 )
 
 #### Static analysis
 
