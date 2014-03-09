@@ -293,5 +293,83 @@ suite('PEG', function () {
 
             assert.deepEqual(pattern.exec(JSON.stringify(source)), source);
         });
+
+        test('XML', function () {
+            var pattern = new PEG('node', function (rule) {
+                this.node = 'regular / empty';
+                this.regular = '"<" wsp? name:name wsp? attrs:attrs? wsp? ">" nodes:(node / text)* "</" wsp? name wsp? ">"';
+                this.empty = '"<" wsp? name:name wsp? attrs:attrs? wsp? "/>"';
+                this.attrs = rule('(name value?)<wsp>+').join(0, 1);
+                this.value = '(wsp? "=" wsp? v:quoted).v';
+                this.quoted = rule('["] char* ["]').select(1).merge();
+                this.char = 'entity / decimal / printable ~ ["]';
+                this.entity = rule(/&[a-z]+;/).slice(+1, -1).then(decodeEntity);
+                this.decimal = rule(/&#[0-9]+;/).slice(+2, -1).parseInt().then(decodeChar);
+                this.text = rule('(char ~ [<>])*').merge();
+                this.printable = /[\x20-\x7E]/i;
+                this.name = /[a-z\-]+/;
+                this.wsp = /[\x00-\x20]+/;
+            });
+
+            function decodeChar(n) {
+                return String.fromCharCode(n);
+            }
+
+            function decodeEntity(s) {
+                return { 'nbsp': '\x0A', 'quot': '"', 'lt': '<', 'gt': '>', 'amp': '&' }[s];
+            }
+
+            var parsed = pattern.exec(
+                '<groups>' +
+                    '<group name="Sales">' +
+                        '<user name="John Doe" title="Senior Salesman" />' +
+                        '<user name="John Smith" title="Junior Salesman" />' +
+                        '<user name="Joe Smith" title="Director of Sales">' +
+                            '<group name="Reports">' +
+                                'TBD &lt;&#32;&gt;' +
+                            '</group>' +
+                        '</user>' +
+                    '</group>' +
+                    '  <   group   name  =  "New"   tag =   "abc &quot; def&#32;ghi"   />   ' +
+                '</groups>');
+
+            assert.deepEqual(parsed, {
+                name: 'groups',
+                attrs: void 0,
+                nodes: [
+                    {
+                        name: 'group',
+                        attrs: { name: 'Sales' },
+                        nodes: [
+                            {
+                                name: 'user',
+                                attrs: { name: 'John Doe', title: 'Senior Salesman' }
+                            },
+                            {
+                                name: 'user',
+                                attrs: { name: 'John Smith', title: 'Junior Salesman' }
+                            },
+                            {
+                                name: 'user',
+                                attrs: { name: 'Joe Smith', title: 'Director of Sales' },
+                                nodes: [
+                                    {
+                                        name: 'group',
+                                        attrs: { name: 'Reports' },
+                                        nodes: ['TBD < >']
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    '  ',
+                    {
+                        name: 'group',
+                        attrs: { name: 'New', tag: 'abc " def ghi' }
+                    },
+                    '   '
+                ]
+            });
+        });
     });
 });

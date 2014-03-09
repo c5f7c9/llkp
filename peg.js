@@ -110,7 +110,7 @@
             return new PEG(definition, rules);
     }
 
-    PEG.pattern = compose('def', function ($) {
+    PEG.pattern = compose(function ($) {
         this.alt = rep($('seq'), rgx(/\s+\/\s+/)).as('any');
         this.seq = rep(any($('exc'), $('trm')), rgx(/\s+/)).as('seq');
         this.exc = seq($('trm'), rgx(/\s+~\s+/), $('trm')).map({ lhs: 0, rhs: 2 }).as('exc');
@@ -130,20 +130,19 @@
         this.sep = seq(txt('<'), $('def'), txt('>')).select(1);
         this.lbl = rgx(/[a-z0-9]+/i);
         this.def = $('alt');
+
+        return $('def');
     });
 
     PEG.prototype = Pattern.prototype;
 
-    function compose(name, define) {
+    function compose(define) {
         var rules = {};
-
-        define.call(rules, function (name) {
+        return define.call(rules, function (name) {
             return rules[name] || new Pattern(name, function (str, pos) {
                 return rules[name].exec(str, pos);
             });
         });
-
-        return rules[name];
     }
 
     function str(lq, rq) {
