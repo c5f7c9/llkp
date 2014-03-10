@@ -89,7 +89,13 @@
         }
 
         function ref(name) {
-            return (refs[name] = refs[name]) || new Pattern(name, function (str, pos) {
+            if (refs[name])
+                return refs[name];
+
+            refs[name] = null;
+
+            return new Pattern(name, function (str, pos) {
+                refs[name] = refs[name] || build(rules[name], name);
                 return refs[name].exec(str, pos);
             });
         }
@@ -99,14 +105,19 @@
 
             if (rules instanceof Function)
                 rules.call(rules = {}, build);
+            else
+                rules = Object.create(rules || {});
 
-            for (name in rules)
-                refs[name] = build(rules[name], name);
+            for (name in ABNF.rules)
+                if (name in rules)
+                    throw new SyntaxError('Rule name is reserved: ' + name);
+                else
+                    rules[name] = ABNF.rules[name];
 
             pattern = build(definition);
 
             for (name in refs)
-                if (!refs[name])
+                if (!rules[name])
                     throw new SyntaxError('Rule is not defined: ' + name);
 
             Pattern.call(self, pattern + '', pattern.exec);
@@ -194,6 +205,27 @@
 
         return ref('any');
     })();
+
+    // Predefined ABNF rules taken from RFC 5234.
+    // http://tools.ietf.org/html/rfc5234#appendix-B.1
+    ABNF.rules = {
+        ALPHA: '%x41-5A / %x61-7A', // A-Z / a-z
+        BIT: '"0" / "1"',
+        CHAR: '%x01-7F', // any 7-bit US-ASCII character, excluding NUL
+        CR: '%x0D', // carriage return
+        CRLF: 'CR LF', // Internet standard newline
+        CTL: '%x00-1F / %x7F', // controls
+        DIGIT: '%x30-39', // 0-9
+        DQUOTE: '%x22', // " (Double Quote)
+        HEXDIG: 'DIGIT / "A" / "B" / "C" / "D" / "E" / "F"',
+        HTAB: '%x09', // horizontal tab
+        LF: '%x0A', // linefeed
+        LWSP: '*(WSP / CRLF WSP)', // linear-white-space
+        OCTET: '%x00-FF',  // 8 bits of data
+        SP: '%x20',
+        VCHAR: '%x21-7E', // visible (printing) characters
+        WSP: 'SP / HTAB' // white space
+    };
 
     if (typeof module != typeof void 0) // for Node
         module.exports = ABNF;

@@ -615,6 +615,137 @@ suite('ABNF', function () {
             }
         });
 
+        suite('Predefined', function () {
+            ptest('ALPHA', {
+                'a': 'a',
+                'h': 'h',
+                'z': 'z',
+                'A': 'A',
+                'H': 'H',
+                'Z': 'Z',
+                '2': null,
+                '': null
+            });
+
+            ptest('BIT', {
+                '0': '0',
+                '1': '1',
+                '2': null,
+                '': null
+            });
+
+            ptest('CHAR', {
+                '\x01': '\x01',
+                'H': 'H',
+                'h': 'h',
+                '%': '%',
+                '\x7F': '\x7F',
+                '\x80': null,
+                '': null
+            });
+
+            test('CHAR-NUL', function () {
+                assert.equal(ABNF('CHAR').exec(String.fromCharCode(0)), null);
+            });
+
+            ptest('CR', {
+                '\r': '\r',
+                '\n': null,
+                '': null,
+                '3': null
+            });
+
+            ptest('LF', {
+                '\r': null,
+                '\n': '\n',
+                '': null,
+                '3': null
+            });
+
+            ptest('CRLF', {
+                '\r\n': ['\r', '\n'],
+                '\n': null,
+                '\r': null,
+                '': null,
+                '3': null
+            });
+
+            ptest('CTL', {
+                '\x01': '\x01',
+                '\x15': '\x15',
+                '\x7F': '\x7F',
+                'T': null,
+                '': null
+            });
+
+            ptest('DIGIT', {
+                '0': '0',
+                '5': '5',
+                '9': '9',
+                'E': null,
+                '': null
+            });
+
+            ptest('HEXDIG', {
+                '0': '0',
+                '5': '5',
+                '9': '9',
+                'A': 'A',
+                'C': 'C',
+                'F': 'F',
+                'E': 'E',
+                '': null
+            });
+
+            ptest('DQUOTE', {
+                '"': '"',
+                "'": null,
+                '': null
+            });
+
+            ptest('HTAB', {
+                '\x09': '\x09',
+                '\x08': null,
+                '': null
+            });
+
+            ptest('OCTET', {
+                'a': 'a',
+                '\xFF': '\xFF',
+                '\u0409': null,
+                '': null
+            });
+
+            ptest('VCHAR', {
+                '\x21': '\x21',
+                '\x7E': '\x7E',
+                'G': 'G',
+                '': null
+            });
+
+            ptest('SP', {
+                '\x20': '\x20',
+                '\r': null,
+                '': null
+            });
+
+            ptest('WSP', {
+                '\x20': '\x20',
+                '\x09': '\x09',
+                '\r': null,
+                '\n': null,
+                '': null
+            });
+
+            ptest('LWSP', {
+                ' \t': [' ', '\t'],
+                '\r\n ': [[['\r', '\n'], ' ']],
+                '   ': [' ', ' ', ' '],
+                '': [],
+                'a': null
+            });
+        });
+
         suite('Various', function () {
             ptest('"Q" PLUS "Q" / "W"', {
                 'PLUS': /\s*\+\s*/
@@ -1534,7 +1665,7 @@ suite('ABNF', function () {
                         return t;
                     });
 
-                    this['term'] = $('fctr *([MUL / DIV / WSP] fctr)').then(function (r) {
+                    this['term'] = $('fctr *([MUL / DIV / S] fctr)').then(function (r) {
                         var i, t = r[0];
 
                         for (i = 0; i < r[1].length; i++) {
@@ -1555,7 +1686,7 @@ suite('ABNF', function () {
                         return t;
                     });
 
-                    this['func'] = $('FNAME [WSP] fctr').then(function (r) {
+                    this['func'] = $('FNAME [S] fctr').then(function (r) {
                         var t = {};
                         t[r[0]] = r[2];
                         return t;
@@ -1577,7 +1708,7 @@ suite('ABNF', function () {
 
                     this['NAME'] = /[a-z]+/i;
                     this['FNAME'] = /sin|cos|tg|ctg/i;
-                    this['WSP'] = /\s+/;
+                    this['S'] = /\s+/;
                 });
             });
 
