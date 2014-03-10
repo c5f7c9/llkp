@@ -37,6 +37,18 @@ function psuite(name, patterns) {
 suite('ABNF', function () {
     'use strict';
 
+    test('InvalidRule', function () {
+        assert.throws(
+            function () { ABNF('1*') },
+            'SyntaxError: Invalid ABNF rule: 1*');
+    });
+
+    test('ReservedRule', function () {
+        assert.throws(
+            function () { ABNF('DIGIT', { DIGIT: /\d/ }) },
+            'SyntaxError: Invalid ABNF rule: 1*');
+    });
+
     suite('toString', function () {
         test('text', function () {
             var p = new ABNF('"123"');
